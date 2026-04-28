@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Risk Gift</title>
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    text-align: center;
+}
+.container {
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+}
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+}
+.tab {
+    background: #1e293b;
+}
+.active {
+    background: #3b82f6;
+}
+#rocketScreen {
+    display: none;
+}
+.multiplier {
+    font-size: 40px;
+    margin: 20px 0;
+}
+
+/* Canvas */
+canvas {
+    background: black;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>Risk Gift</h1>
+
+<div>
+    <button class="tab active" onclick="showTab('cases')">Кейсы (скоро)</button>
+    <button class="tab" onclick="showTab('rocket')">🚀 Ракетка</button>
+</div>
+
+<hr>
+
+<div>
+    Баланс: <span id="balance">1000</span> ₽
+    <button onclick="deposit()">Пополнить +1000</button>
+</div>
+
+<hr>
+
+<div id="casesScreen">
+    <h2>Скоро...</h2>
+</div>
+
+<div id="rocketScreen">
+    <div class="multiplier" id="multiplier">1.00x</div>
+
+    <canvas id="canvas" width="500" height="300"></canvas>
+
+    <br>
+    <input type="number" id="bet" value="100">
+    <br>
+
+    <button onclick="startGame()">Ставить</button>
+    <button onclick="cashOut()">Забрать</button>
+</div>
+
+</div>
+
+<script>
+let balance = 1000;
+let currentMultiplier = 1;
+let gameRunning = false;
+let interval;
+
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext("2d");
+
+let rocket = { x: 50, y: 250 };
+
+function updateBalance() {
+    document.getElementById("balance").innerText = balance;
+}
+
+function deposit() {
+    balance += 1000;
+    updateBalance();
+}
+
+function showTab(tab) {
+    document.getElementById("casesScreen").style.display = tab === 'cases' ? 'block' : 'none';
+    document.getElementById("rocketScreen").style.display = tab === 'rocket' ? 'block' : 'none';
+}
+
+function drawRocket() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // огонь
+    ctx.fillStyle = "orange";
+    ctx.fillRect(rocket.x - 5, rocket.y + 15, 10, 10);
+
+    // корпус
+    ctx.fillStyle = "white";
+    ctx.fillRect(rocket.x, rocket.y, 10, 20);
+
+    // нос
+    ctx.beginPath();
+    ctx.moveTo(rocket.x, rocket.y);
+    ctx.lineTo(rocket.x + 5, rocket.y - 10);
+    ctx.lineTo(rocket.x + 10, rocket.y);
+    ctx.fill();
+}
+
+function startGame() {
+    let bet = parseInt(document.getElementById("bet").value);
+
+    if (gameRunning) return;
+    if (bet > balance) {
+        alert("Недостаточно средств");
+        return;
+    }
+
+    balance -= bet;
+    updateBalance();
+
+    currentMultiplier = 1;
+    gameRunning = true;
+
+    rocket.x = 50;
+    rocket.y = 250;
+
+    interval = setInterval(() => {
+        currentMultiplier += Math.random() * 0.1;
+
+        document.getElementById("multiplier").innerText =
+            currentMultiplier.toFixed(2) + "x";
+
+        // движение ракеты
+        rocket.x += 2;
+        rocket.y -= currentMultiplier * 0.5;
+
+        drawRocket();
+
+        // шанс краша
+        if (Math.random() < 0.02) {
+            crash();
+        }
+
+    }, 50);
+}
+
+function crash() {
+    clearInterval(interval);
+    gameRunning = false;
+
+    // анимация падения
+    let fall = setInterval(() => {
+        rocket.y += 5;
+        drawRocket();
+
+        if (rocket.y > 300) {
+            clearInterval(fall);
+        }
+    }, 30);
+
+    alert("💥 Краш на " + currentMultiplier.toFixed(2) + "x");
+}
+
+function cashOut() {
+    if (!gameRunning) return;
+
+    let bet = parseInt(document.getElementById("bet").value);
+    let win = bet * currentMultiplier;
+
+    balance += Math.floor(win);
+    updateBalance();
+
+    clearInterval(interval);
+    gameRunning = false;
+
+    alert("💰 Забрал " + Math.floor(win) + " ₽");
+}
+
+// первый рендер
+drawRocket();
+</script>
+
+</body>
+</html>
