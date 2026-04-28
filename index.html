@@ -203,3 +203,55 @@ drawRocket();
 
 </body>
 </html>
+<h3>Онлайн игроки</h3>
+<div id="players" style="text-align:left; max-height:150px; overflow:auto;"></div>
+let fakePlayers = [];
+let names = ["Alex", "Misha", "Dima", "Olga", "Sasha", "Ivan", "Nikita", "Vlad"];
+function generatePlayers() {
+    fakePlayers = [];
+
+    let count = Math.floor(Math.random() * 6) + 5;
+
+    for (let i = 0; i < count; i++) {
+        fakePlayers.push({
+            name: names[Math.floor(Math.random() * names.length)],
+            bet: Math.floor(Math.random() * 500) + 50,
+            cashout: (Math.random() * 3 + 1).toFixed(2),
+            status: "playing"
+        });
+    }
+
+    renderPlayers();
+}
+        function renderPlayers() {
+    let container = document.getElementById("players");
+    container.innerHTML = "";
+
+    fakePlayers.forEach(p => {
+        let div = document.createElement("div");
+
+        let text = `${p.name} — ${p.bet}₽`;
+
+        if (p.status === "cashed") {
+            text += ` ✅ ${p.cashout}x`;
+        }
+
+        if (p.status === "lost") {
+            text += ` ❌`;
+        }
+
+        div.innerText = text;
+        container.appendChild(div);
+    });
+}fakePlayers.forEach(p => {
+    if (p.status === "playing" && currentMultiplier >= p.cashout) {
+        p.status = "cashed";
+    }
+});
+renderPlayers();
+        fakePlayers.forEach(p => {
+    if (p.status === "playing") {
+        p.status = "lost";
+    }
+});
+renderPlayers();
