@@ -3,255 +3,394 @@
 <head>
 <meta charset="UTF-8">
 <title>Risk Gift</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-body {
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-    text-align: center;
-}
-.container {
-    max-width: 600px;
-    margin: auto;
-    padding: 20px;
-}
-button {
-    padding: 10px 20px;
-    margin: 5px;
-    border: none;
-    cursor: pointer;
-    border-radius: 8px;
-}
-.tab {
-    background: #1e293b;
-}
-.active {
-    background: #3b82f6;
-}
-#rocketScreen {
-    display: none;
-}
-.multiplier {
-    font-size: 40px;
-    margin: 20px 0;
+:root{
+  --bg:#0b1020;
+  --card:#121a33;
+  --accent:#6d5cff;
+  --accent2:#8b5cf6;
+  --text:#e6e9ff;
+  --muted:#94a3b8;
+  --green:#22c55e;
+  --red:#ef4444;
 }
 
-/* Canvas */
-canvas {
-    background: black;
-    border-radius: 10px;
-    margin-top: 15px;
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: system-ui, Arial;
+  background: radial-gradient(circle at 20% 0%, #11183a, #05070f 60%);
+  color:var(--text);
 }
+
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+/* HEADER */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:15px;
+}
+
+.title{
+  font-size:28px;
+  font-weight:700;
+  background:linear-gradient(90deg,#fff,#a5b4fc);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+/* TABS */
+.tabs{
+  display:flex;
+  gap:10px;
+  margin:15px 0;
+}
+.tab{
+  flex:1;
+  padding:12px;
+  border-radius:12px;
+  background:var(--card);
+  cursor:pointer;
+  transition:0.2s;
+}
+.tab.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+}
+
+/* BALANCE */
+.balance{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:var(--card);
+  padding:12px;
+  border-radius:12px;
+}
+
+.btn{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;
+  padding:10px 15px;
+  border-radius:10px;
+  color:white;
+  cursor:pointer;
+}
+
+/* CASE (3D-ish) */
+.case-box{
+  margin-top:30px;
+  display:flex;
+  justify-content:center;
+}
+.case{
+  width:200px;
+  height:200px;
+  background:linear-gradient(145deg,#5b21b6,#9333ea);
+  border-radius:20px;
+  position:relative;
+  transform:rotateX(20deg) rotateY(-20deg);
+  box-shadow:
+    0 20px 40px rgba(139,92,246,0.5),
+    inset 0 0 40px rgba(255,255,255,0.1);
+}
+.case:after{
+  content:"Скоро";
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  font-weight:bold;
+}
+
+/* ROCKET GAME */
+.game{
+  display:none;
+}
+
+.multiplier{
+  font-size:48px;
+  text-align:center;
+  margin:10px 0;
+}
+
+/* CANVAS */
+canvas{
+  width:100%;
+  height:300px;
+  background:black;
+  border-radius:12px;
+}
+
+/* CONTROLS */
+.controls{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+.controls input{
+  flex:1;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+}
+
+/* PLAYERS */
+.players{
+  margin-top:15px;
+  background:var(--card);
+  padding:10px;
+  border-radius:12px;
+  max-height:150px;
+  overflow:auto;
+  font-size:14px;
+}
+
+/* HISTORY */
+.history{
+  display:flex;
+  gap:6px;
+  margin-top:10px;
+  flex-wrap:wrap;
+}
+.history span{
+  padding:5px 8px;
+  border-radius:8px;
+  background:#1f2a4a;
+  font-size:12px;
+}
+.green{color:var(--green)}
+.red{color:var(--red)}
+
 </style>
 </head>
 <body>
 
 <div class="container">
 
-<h1>Risk Gift</h1>
-
-<div>
-    <button class="tab active" onclick="showTab('cases')">Кейсы (скоро)</button>
-    <button class="tab" onclick="showTab('rocket')">🚀 Ракетка</button>
+<div class="header">
+  <div class="title">Risk Gift</div>
 </div>
 
-<hr>
-
-<div>
-    Баланс: <span id="balance">1000</span> ₽
-    <button onclick="deposit()">Пополнить +1000</button>
+<div class="balance">
+  <div>Баланс: <b id="balance">1000</b> ₽</div>
+  <button class="btn" onclick="deposit()">Пополнить</button>
 </div>
 
-<hr>
-
-<div id="casesScreen">
-    <h2>Скоро...</h2>
+<div class="tabs">
+  <div class="tab active" onclick="showTab('cases')">Кейсы (скоро)</div>
+  <div class="tab" onclick="showTab('game')">🚀 Ракетка</div>
 </div>
 
-<div id="rocketScreen">
-    <div class="multiplier" id="multiplier">1.00x</div>
+<!-- CASE -->
+<div id="cases">
+  <div class="case-box">
+    <div class="case"></div>
+  </div>
+</div>
 
-    <canvas id="canvas" width="500" height="300"></canvas>
+<!-- GAME -->
+<div id="game" class="game">
 
-    <br>
+  <div class="multiplier" id="multiplier">1.00x</div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls">
     <input type="number" id="bet" value="100">
-    <br>
+    <button class="btn" onclick="startGame()">Ставка</button>
+    <button class="btn" onclick="cashOut()">Забрать</button>
+  </div>
 
-    <button onclick="startGame()">Ставить</button>
-    <button onclick="cashOut()">Забрать</button>
+  <div class="players" id="players"></div>
+
+  <div class="history" id="history"></div>
+
 </div>
 
 </div>
 
 <script>
 let balance = 1000;
-let currentMultiplier = 1;
-let gameRunning = false;
-let interval;
+let multiplier = 1;
+let running = false;
+let ctx = document.getElementById("canvas").getContext("2d");
 
-let canvas = document.getElementById("canvas");
-let ctx = canvas.getContext("2d");
+let rocket = {x:50,y:250};
+let particles = [];
+let players = [];
+let history = [];
 
-let rocket = { x: 50, y: 250 };
-
-function updateBalance() {
-    document.getElementById("balance").innerText = balance;
+function deposit(){
+  balance += 1000;
+  updateBalance();
 }
 
-function deposit() {
-    balance += 1000;
-    updateBalance();
+function updateBalance(){
+  document.getElementById("balance").innerText = balance;
 }
 
-function showTab(tab) {
-    document.getElementById("casesScreen").style.display = tab === 'cases' ? 'block' : 'none';
-    document.getElementById("rocketScreen").style.display = tab === 'rocket' ? 'block' : 'none';
+function showTab(tab){
+  document.getElementById("cases").style.display = tab==="cases"?"block":"none";
+  document.getElementById("game").style.display = tab==="game"?"block":"none";
 }
 
-function drawRocket() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+/* ROCKET DRAW */
+function draw(){
+  ctx.clearRect(0,0,800,300);
 
-    // огонь
-    ctx.fillStyle = "orange";
-    ctx.fillRect(rocket.x - 5, rocket.y + 15, 10, 10);
+  // particles
+  particles.forEach(p=>{
+    ctx.fillStyle="orange";
+    ctx.fillRect(p.x,p.y,3,3);
+    p.y+=2;
+  });
 
-    // корпус
-    ctx.fillStyle = "white";
-    ctx.fillRect(rocket.x, rocket.y, 10, 20);
-
-    // нос
-    ctx.beginPath();
-    ctx.moveTo(rocket.x, rocket.y);
-    ctx.lineTo(rocket.x + 5, rocket.y - 10);
-    ctx.lineTo(rocket.x + 10, rocket.y);
-    ctx.fill();
+  // rocket (telegram-like simple)
+  ctx.fillStyle="white";
+  ctx.beginPath();
+  ctx.moveTo(rocket.x,rocket.y);
+  ctx.lineTo(rocket.x+10,rocket.y+20);
+  ctx.lineTo(rocket.x-10,rocket.y+20);
+  ctx.fill();
 }
 
-function startGame() {
-    let bet = parseInt(document.getElementById("bet").value);
+/* PLAYERS */
+function genPlayers(){
+  let names=["Alex","Ivan","Misha","Vlad","Nikita","Sasha"];
+  players=[];
+  for(let i=0;i<8;i++){
+    players.push({
+      name:names[Math.random()*names.length|0],
+      bet:Math.floor(Math.random()*500)+50,
+      exit:(Math.random()*2+1).toFixed(2),
+      status:"play"
+    });
+  }
+}
 
-    if (gameRunning) return;
-    if (bet > balance) {
-        alert("Недостаточно средств");
-        return;
+function renderPlayers(){
+  let el=document.getElementById("players");
+  el.innerHTML="";
+  players.forEach(p=>{
+    let text=p.name+" "+p.bet+"₽ ";
+    if(p.status==="win") text+="✅ "+p.exit+"x";
+    if(p.status==="lose") text+="❌";
+    el.innerHTML+=text+"<br>";
+  });
+}
+
+/* GAME */
+function startGame(){
+  if(running) return;
+
+  let bet=+betInput.value;
+  if(bet>balance) return alert("Нет денег");
+
+  balance-=bet;
+  updateBalance();
+
+  multiplier=1;
+  rocket={x:50,y:250};
+  particles=[];
+  running=true;
+
+  genPlayers();
+  renderPlayers();
+
+  loop();
+}
+
+function loop(){
+  if(!running) return;
+
+  multiplier += 0.03 + Math.random()*0.05;
+
+  // меньше шанс (раньше краш)
+  let crashChance = 0.03 + multiplier*0.01;
+
+  if(Math.random() < crashChance){
+    crash();
+    return;
+  }
+
+  document.getElementById("multiplier").innerText = multiplier.toFixed(2)+"x";
+
+  rocket.x+=2;
+  rocket.y-=1.2;
+
+  particles.push({x:rocket.x,y:rocket.y+20});
+
+  players.forEach(p=>{
+    if(p.status==="play" && multiplier>=p.exit){
+      p.status="win";
     }
+  });
 
-    balance -= bet;
-    updateBalance();
+  draw();
+  renderPlayers();
 
-    currentMultiplier = 1;
-    gameRunning = true;
-
-    rocket.x = 50;
-    rocket.y = 250;
-
-    interval = setInterval(() => {
-        currentMultiplier += Math.random() * 0.1;
-
-        document.getElementById("multiplier").innerText =
-            currentMultiplier.toFixed(2) + "x";
-
-        // движение ракеты
-        rocket.x += 2;
-        rocket.y -= currentMultiplier * 0.5;
-
-        drawRocket();
-
-        // шанс краша
-        if (Math.random() < 0.02) {
-            crash();
-        }
-
-    }, 50);
+  requestAnimationFrame(loop);
 }
 
-function crash() {
-    clearInterval(interval);
-    gameRunning = false;
+function crash(){
+  running=false;
 
-    // анимация падения
-    let fall = setInterval(() => {
-        rocket.y += 5;
-        drawRocket();
+  players.forEach(p=>{
+    if(p.status==="play") p.status="lose";
+  });
 
-        if (rocket.y > 300) {
-            clearInterval(fall);
-        }
-    }, 30);
+  history.unshift(multiplier.toFixed(2));
+  if(history.length>15) history.pop();
 
-    alert("💥 Краш на " + currentMultiplier.toFixed(2) + "x");
+  renderHistory();
+  renderPlayers();
+
+  alert("Краш на "+multiplier.toFixed(2)+"x");
 }
 
-function cashOut() {
-    if (!gameRunning) return;
+function cashOut(){
+  if(!running) return;
 
-    let bet = parseInt(document.getElementById("bet").value);
-    let win = bet * currentMultiplier;
+  let bet=+betInput.value;
+  let win = bet*multiplier;
 
-    balance += Math.floor(win);
-    updateBalance();
+  balance += Math.floor(win);
+  updateBalance();
 
-    clearInterval(interval);
-    gameRunning = false;
+  running=false;
 
-    alert("💰 Забрал " + Math.floor(win) + " ₽");
+  history.unshift(multiplier.toFixed(2));
+  renderHistory();
+
+  alert("Забрал "+Math.floor(win));
 }
 
-// первый рендер
-drawRocket();
+/* HISTORY */
+function renderHistory(){
+  let el=document.getElementById("history");
+  el.innerHTML="";
+  history.forEach(h=>{
+    let span=document.createElement("span");
+    span.innerText=h+"x";
+    span.className = h>2 ? "green":"red";
+    el.appendChild(span);
+  });
+}
+
+/* INIT */
+let betInput=document.getElementById("bet");
+updateBalance();
+draw();
+
 </script>
 
 </body>
 </html>
-<h3>Онлайн игроки</h3>
-<div id="players" style="text-align:left; max-height:150px; overflow:auto;"></div>
-let fakePlayers = [];
-let names = ["Alex", "Misha", "Dima", "Olga", "Sasha", "Ivan", "Nikita", "Vlad"];
-function generatePlayers() {
-    fakePlayers = [];
-
-    let count = Math.floor(Math.random() * 6) + 5;
-
-    for (let i = 0; i < count; i++) {
-        fakePlayers.push({
-            name: names[Math.floor(Math.random() * names.length)],
-            bet: Math.floor(Math.random() * 500) + 50,
-            cashout: (Math.random() * 3 + 1).toFixed(2),
-            status: "playing"
-        });
-    }
-
-    renderPlayers();
-}
-        function renderPlayers() {
-    let container = document.getElementById("players");
-    container.innerHTML = "";
-
-    fakePlayers.forEach(p => {
-        let div = document.createElement("div");
-
-        let text = `${p.name} — ${p.bet}₽`;
-
-        if (p.status === "cashed") {
-            text += ` ✅ ${p.cashout}x`;
-        }
-
-        if (p.status === "lost") {
-            text += ` ❌`;
-        }
-
-        div.innerText = text;
-        container.appendChild(div);
-    });
-}fakePlayers.forEach(p => {
-    if (p.status === "playing" && currentMultiplier >= p.cashout) {
-        p.status = "cashed";
-    }
-});
-renderPlayers();
-        fakePlayers.forEach(p => {
-    if (p.status === "playing") {
-        p.status = "lost";
-    }
-});
-renderPlayers();
