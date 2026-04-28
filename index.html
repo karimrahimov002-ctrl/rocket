@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Risk Gift</title>
+<title>Risk Gift FINAL</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -11,62 +11,29 @@ body{
   font-family:Arial;
   color:white;
   background: radial-gradient(circle at top,#2e1065,#020617);
-  overflow:hidden;
 }
 
-/* STAR BG */
-#stars{
+canvas#stars{
   position:fixed;
   width:100%;
   height:100%;
   z-index:-1;
 }
 
-.container{
-  max-width:900px;
-  margin:auto;
-  padding:15px;
-}
+.container{max-width:900px;margin:auto;padding:15px;}
 
-/* HEADER */
 .balance{
-  display:flex;
-  justify-content:space-between;
-  background:#0f172a;
-  padding:10px;
-  border-radius:10px;
+  display:flex;justify-content:space-between;
+  background:#0f172a;padding:10px;border-radius:10px;
 }
 
-button{
-  padding:6px 10px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-}
+.tabs{display:flex;gap:10px;margin-top:10px;}
+.tab{flex:1;padding:10px;background:#1e293b;border-radius:10px;text-align:center;cursor:pointer;}
+.active{background:#7c3aed;}
 
-/* TABS */
-.tabs{
-  display:flex;
-  gap:8px;
-  margin-top:10px;
-}
-.tab{
-  flex:1;
-  padding:10px;
-  background:#1e293b;
-  border-radius:10px;
-  text-align:center;
-  cursor:pointer;
-}
-.active{
-  background:#7c3aed;
-}
-
-/* SCREENS */
 .screen{display:none;}
 .activeScreen{display:block;}
 
-/* GAME */
 .mult{
   font-size:50px;
   text-align:center;
@@ -74,66 +41,39 @@ button{
 }
 
 #graph{
-  width:100%;
-  height:250px;
-  background:black;
-  border-radius:10px;
-  position:relative;
+  width:100%;height:260px;background:black;border-radius:10px;position:relative;
 }
-
-.tgRocket{
+#rocket{
   position:absolute;
-  font-size:24px;
-}
-
-/* PLAYERS */
-.players{
-  display:flex;
-  gap:10px;
-  margin-top:10px;
-  overflow-x:auto;
-}
-.player{
-  text-align:center;
-}
-.avatar{
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  background:#1e293b;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-/* HISTORY */
-.history{
-  display:flex;
-  gap:5px;
-  margin-top:10px;
-  flex-wrap:wrap;
-}
-.history span{
-  background:#1e293b;
-  padding:5px;
-  border-radius:6px;
-}
-
-/* CASE */
-.case{
-  margin-top:30px;
-  text-align:center;
   font-size:22px;
 }
 
-/* DEPOSIT */
-.deposit{
-  margin-top:20px;
+.controls{
+  display:flex;gap:10px;margin-top:10px;
+}
+input{flex:1;padding:10px;border-radius:6px;border:none;}
+
+.players{
+  margin-top:10px;
   background:#0f172a;
   padding:10px;
   border-radius:10px;
+  max-height:200px;
+  overflow:auto;
 }
 
+.player{display:flex;justify-content:space-between;font-size:14px;}
+
+.history{
+  display:flex;gap:5px;margin-top:10px;flex-wrap:wrap;
+}
+.history span{
+  background:#1e293b;padding:5px;border-radius:6px;
+}
+
+.deposit{
+  margin-top:20px;background:#0f172a;padding:10px;border-radius:10px;
+}
 </style>
 </head>
 
@@ -145,7 +85,7 @@ button{
 
 <div class="balance">
   <div>Баланс: <b id="balance">1000</b> TON</div>
-  <button onclick="openDeposit()">Пополнить</button>
+  <button onclick="openTab('gift')">Пополнить</button>
 </div>
 
 <div class="tabs">
@@ -154,25 +94,30 @@ button{
   <div class="tab" onclick="openTab('gift')">🎁 Подарок</div>
 </div>
 
-<!-- ROCKET -->
-<div id="rocket" class="screen activeScreen">
-  <div class="mult" id="mult">1.00x</div>
+<div id="rocketScreen" class="screen activeScreen">
 
-  <div id="graph">
-    <canvas id="graphCanvas"></canvas>
-    <div id="rocketIcon" class="tgRocket">🚀</div>
-  </div>
+<div class="mult" id="mult">Ожидание...</div>
 
-  <div class="players" id="players"></div>
-  <div class="history" id="history"></div>
+<div id="graph">
+  <canvas id="g"></canvas>
+  <div id="rocket">🚀</div>
 </div>
 
-<!-- CASES -->
+<div class="controls">
+  <input type="number" id="bet" value="100">
+  <button onclick="placeBet()">Ставка</button>
+  <button onclick="cashOut()">Забрать</button>
+</div>
+
+<div class="players" id="players"></div>
+<div class="history" id="history"></div>
+
+</div>
+
 <div id="cases" class="screen">
-  <div class="case">📦 Скоро</div>
+  <div style="margin-top:40px;text-align:center;font-size:24px;">📦 Скоро</div>
 </div>
 
-<!-- GIFT -->
 <div id="gift" class="screen">
   <div class="deposit">
     📩 Отправьте подарок в Telegram: <b>@riskgift_bot</b><br>
@@ -186,114 +131,180 @@ button{
 
 /* ===== STARS ===== */
 let sctx=stars.getContext("2d");
-let starsArr=[];
+let s=[];
 for(let i=0;i<200;i++){
-  starsArr.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight});
+  s.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight});
 }
-function drawStars(){
+function starLoop(){
   sctx.clearRect(0,0,innerWidth,innerHeight);
-  sctx.fillStyle="white";
-  starsArr.forEach(s=>{
-    sctx.fillRect(s.x,s.y,2,2);
-    s.y+=0.2;
-    if(s.y>innerHeight) s.y=0;
+  s.forEach(st=>{
+    sctx.fillRect(st.x,st.y,2,2);
+    st.y+=0.2;
+    if(st.y>innerHeight) st.y=0;
   });
-  requestAnimationFrame(drawStars);
+  requestAnimationFrame(starLoop);
 }
-drawStars();
+starLoop();
 
 /* ===== TABS ===== */
 function openTab(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("activeScreen"));
-  document.getElementById(id).classList.add("activeScreen");
-
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  event.target.classList.add("active");
+  document.getElementById(id==="rocket"?"rocketScreen":id).classList.add("activeScreen");
 }
 
-/* ===== GRAPH ===== */
-let ctx=graphCanvas.getContext("2d");
-let points=[];
-let x=0;
+/* ===== STATE ===== */
+let phase="waiting"; // waiting | playing
+let timer=5;
+let multiplier=1;
+
+let players=[];
+let history=[];
+let myBet=0;
+let myActive=false;
 
 /* ===== PLAYERS ===== */
-let names=["Alex","Ivan","Misha","Vlad","Nikita","Sasha"];
-let avatars=["🐶","🐱","🐸","🤖","👽","🐵"];
+let names=["Alex","Ivan","Misha","Vlad","Nikita","Sasha","Oleg","Max"];
 
 function genPlayers(){
-  let el=document.getElementById("players");
-  el.innerHTML="";
-  for(let i=0;i<8;i++){
-    let div=document.createElement("div");
-    div.className="player";
-    div.innerHTML=`
-      <div class="avatar">${avatars[Math.random()*avatars.length|0]}</div>
-      <div>${names[Math.random()*names.length|0]}</div>
-    `;
-    el.appendChild(div);
+  players=[];
+  for(let i=0;i<20;i++){
+    players.push({
+      name:names[Math.random()*names.length|0],
+      bet:Math.floor(Math.random()*1000)+50,
+      exit:(Math.random()*3+1),
+      status:"playing"
+    });
   }
 }
 
-/* ===== HISTORY ===== */
-let history=[];
-function renderHistory(){
-  let el=document.getElementById("history");
+/* ===== RENDER ===== */
+function renderPlayers(){
+  let el=playersDiv;
   el.innerHTML="";
-  history.forEach(h=>{
-    let s=document.createElement("span");
-    s.innerText=h+"x";
-    el.appendChild(s);
+  players.forEach(p=>{
+    let div=document.createElement("div");
+    div.className="player";
+    let status = p.status==="cash"?"✅":(p.status==="lost"?"❌":"");
+    div.innerHTML = `${p.name} — ${p.bet} TON ${status}`;
+    el.appendChild(div);
   });
 }
 
-/* ===== GAME LOOP ===== */
-let mult=1;
+/* ===== HISTORY ===== */
+function renderHistory(){
+  historyDiv.innerHTML="";
+  history.forEach(h=>{
+    let s=document.createElement("span");
+    s.innerText=h+"x";
+    historyDiv.appendChild(s);
+  });
+}
 
-function loop(){
-  requestAnimationFrame(loop);
+/* ===== GRAPH ===== */
+let ctx=g.getContext("2d");
+let pts=[],gx=0;
 
-  mult += 0.01 + Math.random()*0.02;
-
-  let crashChance = 0.03 + mult*0.015;
-
-  if(Math.random()<crashChance){
-    history.unshift(mult.toFixed(2));
-    if(history.length>12) history.pop();
-    renderHistory();
-
-    mult=1;
-    x=0;
-    points=[];
-    genPlayers();
-    return;
-  }
-
-  document.getElementById("mult").innerText = mult.toFixed(2)+"x";
-
-  x+=2;
-  points.push({x:x,y:250 - mult*20});
-
-  ctx.clearRect(0,0,1000,250);
+function drawGraph(){
+  ctx.clearRect(0,0,1000,260);
   ctx.beginPath();
   ctx.strokeStyle="lime";
 
-  points.forEach((p,i)=>{
+  pts.forEach((p,i)=>{
     if(i===0) ctx.moveTo(p.x,p.y);
     else ctx.lineTo(p.x,p.y);
   });
 
   ctx.stroke();
 
-  let last=points[points.length-1];
+  let last=pts[pts.length-1];
   if(last){
-    rocketIcon.style.left=last.x+"px";
-    rocketIcon.style.top=last.y+"px";
+    rocket.style.left=last.x+"px";
+    rocket.style.top=last.y+"px";
   }
 }
 
+/* ===== LOOP ===== */
+function loop(){
+  requestAnimationFrame(loop);
+
+  if(phase==="waiting"){
+    mult.innerText="Старт через "+timer+"с";
+    return;
+  }
+
+  multiplier *= 1.01; // экспонента
+
+  let crashChance = 0.015 + multiplier*0.01;
+
+  if(Math.random()<crashChance){
+    crash();
+    return;
+  }
+
+  mult.innerText=multiplier.toFixed(2)+"x";
+
+  gx+=2;
+  pts.push({x:gx,y:260 - multiplier*30});
+
+  players.forEach(p=>{
+    if(p.status==="playing" && multiplier>=p.exit){
+      p.status="cash";
+    }
+  });
+
+  drawGraph();
+  renderPlayers();
+}
+
+/* ===== ROUND ===== */
+function startRound(){
+  phase="playing";
+  multiplier=1;
+  gx=0;
+  pts=[];
+  genPlayers();
+}
+
+function crash(){
+  phase="waiting";
+
+  players.forEach(p=>{
+    if(p.status==="playing") p.status="lost";
+  });
+
+  history.unshift(multiplier.toFixed(2));
+  if(history.length>15) history.pop();
+
+  renderHistory();
+
+  timer=5;
+  let countdown=setInterval(()=>{
+    timer--;
+    if(timer<=0){
+      clearInterval(countdown);
+      startRound();
+    }
+  },1000);
+}
+
+/* ===== BET ===== */
+function placeBet(){
+  myBet=+bet.value;
+  myActive=true;
+}
+
+function cashOut(){
+  if(!myActive) return;
+  alert("Ты забрал "+Math.floor(myBet*multiplier)+" TON");
+  myActive=false;
+}
+
 /* INIT */
-genPlayers();
-renderHistory();
+const playersDiv=document.getElementById("players");
+const historyDiv=document.getElementById("history");
+const mult=document.getElementById("mult");
+
+startRound();
 loop();
 
 </script>
