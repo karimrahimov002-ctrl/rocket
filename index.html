@@ -6,127 +6,76 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-:root{
-  --bg:#0b1020;
-  --card:#121a33;
-  --accent:#6d5cff;
-  --accent2:#8b5cf6;
-  --text:#e6e9ff;
-  --muted:#94a3b8;
-  --green:#22c55e;
-  --red:#ef4444;
-}
-
-*{box-sizing:border-box}
 body{
   margin:0;
-  font-family: system-ui, Arial;
-  background: radial-gradient(circle at 20% 0%, #11183a, #05070f 60%);
-  color:var(--text);
+  font-family:Arial;
+  background:#020617;
+  color:white;
 }
 
 .container{
-  max-width:900px;
+  max-width:1000px;
   margin:auto;
-  padding:20px;
+  padding:15px;
 }
 
 /* HEADER */
-.header{
+.balance{
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  margin-bottom:15px;
-}
-
-.title{
-  font-size:28px;
-  font-weight:700;
-  background:linear-gradient(90deg,#fff,#a5b4fc);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+  background:#0f172a;
+  padding:10px;
+  border-radius:10px;
 }
 
 /* TABS */
 .tabs{
   display:flex;
   gap:10px;
-  margin:15px 0;
+  margin-top:10px;
 }
 .tab{
   flex:1;
-  padding:12px;
-  border-radius:12px;
-  background:var(--card);
-  cursor:pointer;
-  transition:0.2s;
-}
-.tab.active{
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-}
-
-/* BALANCE */
-.balance{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  background:var(--card);
-  padding:12px;
-  border-radius:12px;
-}
-
-.btn{
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  border:none;
-  padding:10px 15px;
+  padding:10px;
+  background:#1e293b;
   border-radius:10px;
-  color:white;
   cursor:pointer;
 }
+.active{
+  background:#7c3aed;
+}
 
-/* CASE (3D-ish) */
+/* CASE */
 .case-box{
-  margin-top:30px;
+  width:220px;
+  height:220px;
+  margin:40px auto;
+  border-radius:20px;
+  background:linear-gradient(145deg,#6d28d9,#9333ea);
+  transform:rotateX(20deg) rotateY(-20deg);
+  box-shadow:0 20px 40px rgba(124,58,237,0.6);
   display:flex;
+  flex-direction:column;
+  align-items:center;
   justify-content:center;
 }
-.case{
-  width:200px;
-  height:200px;
-  background:linear-gradient(145deg,#5b21b6,#9333ea);
-  border-radius:20px;
-  position:relative;
-  transform:rotateX(20deg) rotateY(-20deg);
-  box-shadow:
-    0 20px 40px rgba(139,92,246,0.5),
-    inset 0 0 40px rgba(255,255,255,0.1);
-}
-.case:after{
-  content:"Скоро";
-  position:absolute;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  font-weight:bold;
+.case-box img{
+  width:80px;
 }
 
-/* ROCKET GAME */
-.game{
-  display:none;
-}
+/* GAME */
+.game{display:none;}
 
-.multiplier{
-  font-size:48px;
+.mult{
+  font-size:60px;
   text-align:center;
-  margin:10px 0;
 }
 
-/* CANVAS */
 canvas{
   width:100%;
   height:300px;
+  border-radius:10px;
   background:black;
-  border-radius:12px;
 }
 
 /* CONTROLS */
@@ -138,258 +87,278 @@ canvas{
 .controls input{
   flex:1;
   padding:10px;
-  border-radius:10px;
-  border:none;
 }
 
 /* PLAYERS */
 .players{
-  margin-top:15px;
-  background:var(--card);
-  padding:10px;
-  border-radius:12px;
-  max-height:150px;
-  overflow:auto;
-  font-size:14px;
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+  overflow-x:auto;
+}
+.avatar{
+  width:45px;
+  height:45px;
+  border-radius:50%;
+  background:#1e293b;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 /* HISTORY */
 .history{
   display:flex;
-  gap:6px;
+  gap:5px;
   margin-top:10px;
   flex-wrap:wrap;
 }
 .history span{
-  padding:5px 8px;
-  border-radius:8px;
-  background:#1f2a4a;
-  font-size:12px;
+  background:#1e293b;
+  padding:5px;
+  border-radius:6px;
 }
-.green{color:var(--green)}
-.red{color:var(--red)}
 
+/* DEPOSIT */
+.deposit{
+  display:none;
+  text-align:center;
+}
 </style>
 </head>
+
 <body>
 
 <div class="container">
 
-<div class="header">
-  <div class="title">Risk Gift</div>
-</div>
-
 <div class="balance">
-  <div>Баланс: <b id="balance">1000</b> ₽</div>
-  <button class="btn" onclick="deposit()">Пополнить</button>
+  <div>Баланс: <b id="balance">1000</b> TON</div>
+  <button onclick="openDeposit()">Пополнить</button>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('cases')">Кейсы (скоро)</div>
+  <div class="tab active" onclick="showTab('cases')">Кейсы</div>
   <div class="tab" onclick="showTab('game')">🚀 Ракетка</div>
 </div>
 
 <!-- CASE -->
 <div id="cases">
   <div class="case-box">
-    <div class="case"></div>
+    <img src="https://cdn-icons-png.flaticon.com/512/3523/3523887.png">
+    <b>Скоро</b>
   </div>
 </div>
 
 <!-- GAME -->
 <div id="game" class="game">
 
-  <div class="multiplier" id="multiplier">1.00x</div>
+<div class="mult" id="mult">1.00x</div>
 
-  <canvas id="canvas"></canvas>
+<canvas id="graph"></canvas>
+<canvas id="three"></canvas>
 
-  <div class="controls">
-    <input type="number" id="bet" value="100">
-    <button class="btn" onclick="startGame()">Ставка</button>
-    <button class="btn" onclick="cashOut()">Забрать</button>
-  </div>
+<div class="controls">
+  <input type="number" id="bet" value="100">
+  <button onclick="startGame()">Ставка</button>
+  <button onclick="cashOut()">Забрать</button>
+</div>
 
-  <div class="players" id="players"></div>
-
-  <div class="history" id="history"></div>
+<div class="players" id="players"></div>
+<div class="history" id="history"></div>
 
 </div>
 
+<!-- DEPOSIT -->
+<div id="deposit" class="deposit">
+  <h2>Пополнение</h2>
+  <p>Отправь подарок TON на адрес:</p>
+  <b>UQ123...TON</b><br><br>
+  <button onclick="showTab('cases')">Назад</button>
 </div>
+
+</div>
+
+<!-- THREE -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 
 <script>
-let balance = 1000;
-let multiplier = 1;
-let running = false;
-let ctx = document.getElementById("canvas").getContext("2d");
+let balance=1000;
+let running=false;
+let mult=1;
 
-let rocket = {x:50,y:250};
-let particles = [];
-let players = [];
-let history = [];
-
-function deposit(){
-  balance += 1000;
-  updateBalance();
-}
-
+/* UI */
 function updateBalance(){
-  document.getElementById("balance").innerText = balance;
+  document.getElementById("balance").innerText=balance;
 }
-
 function showTab(tab){
   document.getElementById("cases").style.display = tab==="cases"?"block":"none";
   document.getElementById("game").style.display = tab==="game"?"block":"none";
+  document.getElementById("deposit").style.display="none";
+}
+function openDeposit(){
+  document.getElementById("cases").style.display="none";
+  document.getElementById("game").style.display="none";
+  document.getElementById("deposit").style.display="block";
 }
 
-/* ROCKET DRAW */
-function draw(){
-  ctx.clearRect(0,0,800,300);
+/* GRAPH */
+let gctx=document.getElementById("graph").getContext("2d");
+let points=[];
+let gx=0;
 
-  // particles
-  particles.forEach(p=>{
-    ctx.fillStyle="orange";
-    ctx.fillRect(p.x,p.y,3,3);
-    p.y+=2;
+function drawGraph(){
+  gctx.clearRect(0,0,1000,300);
+  gctx.beginPath();
+  gctx.strokeStyle="lime";
+  points.forEach((p,i)=>{
+    if(i===0) gctx.moveTo(p.x,p.y);
+    else gctx.lineTo(p.x,p.y);
   });
-
-  // rocket (telegram-like simple)
-  ctx.fillStyle="white";
-  ctx.beginPath();
-  ctx.moveTo(rocket.x,rocket.y);
-  ctx.lineTo(rocket.x+10,rocket.y+20);
-  ctx.lineTo(rocket.x-10,rocket.y+20);
-  ctx.fill();
+  gctx.stroke();
 }
+
+/* THREE */
+let scene,camera,renderer,rocket,flame;
+
+function init3D(){
+  const canvas=document.getElementById("three");
+
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(75,canvas.clientWidth/300,0.1,1000);
+  renderer=new THREE.WebGLRenderer({canvas,alpha:true});
+  renderer.setSize(canvas.clientWidth,300);
+
+  let light=new THREE.PointLight(0xffffff,1);
+  light.position.set(5,5,5);
+  scene.add(light);
+
+  let body=new THREE.CylinderGeometry(0.2,0.2,1.5,32);
+  let mat=new THREE.MeshStandardMaterial({color:0xffffff});
+  rocket=new THREE.Mesh(body,mat);
+
+  let nose=new THREE.Mesh(new THREE.ConeGeometry(0.2,0.5,32),mat);
+  nose.position.y=1;
+  rocket.add(nose);
+
+  flame=new THREE.Mesh(
+    new THREE.ConeGeometry(0.2,0.5,32),
+    new THREE.MeshBasicMaterial({color:0xff6600})
+  );
+  flame.position.y=-1;
+  flame.rotation.x=Math.PI;
+  rocket.add(flame);
+
+  scene.add(rocket);
+  camera.position.z=5;
+}
+init3D();
 
 /* PLAYERS */
+let avatars=["🐶","🐱","🐸","🤖","👽","🐵"];
 function genPlayers(){
-  let names=["Alex","Ivan","Misha","Vlad","Nikita","Sasha"];
-  players=[];
-  for(let i=0;i<8;i++){
-    players.push({
-      name:names[Math.random()*names.length|0],
-      bet:Math.floor(Math.random()*500)+50,
-      exit:(Math.random()*2+1).toFixed(2),
-      status:"play"
-    });
+  let el=document.getElementById("players");
+  el.innerHTML="";
+  for(let i=0;i<10;i++){
+    let d=document.createElement("div");
+    d.className="avatar";
+    d.innerText=avatars[Math.random()*avatars.length|0];
+    el.appendChild(d);
   }
 }
 
-function renderPlayers(){
-  let el=document.getElementById("players");
-  el.innerHTML="";
-  players.forEach(p=>{
-    let text=p.name+" "+p.bet+"₽ ";
-    if(p.status==="win") text+="✅ "+p.exit+"x";
-    if(p.status==="lose") text+="❌";
-    el.innerHTML+=text+"<br>";
-  });
-}
-
-/* GAME */
-function startGame(){
-  if(running) return;
-
-  let bet=+betInput.value;
-  if(bet>balance) return alert("Нет денег");
-
-  balance-=bet;
-  updateBalance();
-
-  multiplier=1;
-  rocket={x:50,y:250};
-  particles=[];
-  running=true;
-
-  genPlayers();
-  renderPlayers();
-
-  loop();
-}
-
+/* GAME LOOP */
 function loop(){
   if(!running) return;
 
-  multiplier += 0.03 + Math.random()*0.05;
+  requestAnimationFrame(loop);
 
-  // меньше шанс (раньше краш)
-  let crashChance = 0.03 + multiplier*0.01;
+  mult += 0.05 + Math.random()*0.07;
 
-  if(Math.random() < crashChance){
+  let crashChance = 0.04 + mult*0.02;
+  if(Math.random()<crashChance){
     crash();
     return;
   }
 
-  document.getElementById("multiplier").innerText = multiplier.toFixed(2)+"x";
+  document.getElementById("mult").innerText = mult.toFixed(2)+"x";
 
-  rocket.x+=2;
-  rocket.y-=1.2;
+  /* GRAPH */
+  gx+=4;
+  points.push({x:gx,y:300 - mult*30});
+  drawGraph();
 
-  particles.push({x:rocket.x,y:rocket.y+20});
+  /* 3D */
+  rocket.position.x += 0.02;
+  rocket.position.y += 0.01;
+  rocket.rotation.z = -0.3;
+  flame.scale.y = 1 + Math.random();
 
-  players.forEach(p=>{
-    if(p.status==="play" && multiplier>=p.exit){
-      p.status="win";
-    }
-  });
-
-  draw();
-  renderPlayers();
-
-  requestAnimationFrame(loop);
+  renderer.render(scene,camera);
 }
 
+/* START */
+function startGame(){
+  if(running) return;
+
+  let bet=+betInput.value;
+  if(bet>balance) return alert("Нет TON");
+
+  balance-=bet;
+  updateBalance();
+
+  mult=1;
+  running=true;
+  gx=0;
+  points=[];
+
+  rocket.position.set(0,0,0);
+
+  genPlayers();
+  loop();
+}
+
+/* CRASH */
 function crash(){
   running=false;
 
-  players.forEach(p=>{
-    if(p.status==="play") p.status="lose";
-  });
-
-  history.unshift(multiplier.toFixed(2));
-  if(history.length>15) history.pop();
-
+  history.unshift(mult.toFixed(2));
   renderHistory();
-  renderPlayers();
 
-  alert("Краш на "+multiplier.toFixed(2)+"x");
+  alert("💥 Краш "+mult.toFixed(2)+"x");
 }
 
+/* CASHOUT */
 function cashOut(){
   if(!running) return;
 
   let bet=+betInput.value;
-  let win = bet*multiplier;
+  let win=bet*mult;
 
-  balance += Math.floor(win);
+  balance+=Math.floor(win);
   updateBalance();
 
   running=false;
 
-  history.unshift(multiplier.toFixed(2));
+  history.unshift(mult.toFixed(2));
   renderHistory();
 
-  alert("Забрал "+Math.floor(win));
+  alert("💰 "+Math.floor(win)+" TON");
 }
 
 /* HISTORY */
+let history=[];
 function renderHistory(){
   let el=document.getElementById("history");
   el.innerHTML="";
   history.forEach(h=>{
-    let span=document.createElement("span");
-    span.innerText=h+"x";
-    span.className = h>2 ? "green":"red";
-    el.appendChild(span);
+    let s=document.createElement("span");
+    s.innerText=h+"x";
+    el.appendChild(s);
   });
 }
 
-/* INIT */
 let betInput=document.getElementById("bet");
 updateBalance();
-draw();
-
 </script>
 
 </body>
