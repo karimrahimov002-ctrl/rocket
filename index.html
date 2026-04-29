@@ -1,211 +1,249 @@
+const http = require("http");
+const WebSocket = require("ws");
+
+/* ================= SERVER ================= */
+
+let clients = [];
+let players = {};
+
+let round = {
+  phase: "waiting",
+  multiplier: 1,
+  timer: 5
+};
+
+function broadcast(data){
+  clients.forEach(c=>{
+    if(c.readyState===1){
+      c.send(JSON.stringify(data));
+    }
+  });
+}
+
+/* ===== GAME ===== */
+function startRound(){
+  round.phase="playing";
+  round.multiplier=1;
+
+  Object.values(players).forEach(p=>{
+    p.status="playing";
+  });
+
+  let loop=setInterval(()=>{
+    round.multiplier *= 1.008;
+
+    let crashChance = 0.01 + round.multiplier*0.008;
+
+    if(Math.random()<crashChance){
+      clearInterval(loop);
+      crash();
+      return;
+    }
+
+    broadcast({
+      type:"tick",
+      multiplier:round.multiplier,
+      players:Object.values(players),
+      online:clients.length
+    });
+
+  },120);
+}
+
+function crash(){
+  Object.values(players).forEach(p=>{
+    if(p.status==="playing") p.status="lost";
+  });
+
+  broadcast({
+    type:"crash",
+    multiplier:round.multiplier,
+    players:Object.values(players)
+  });
+
+  round.phase="waiting";
+  round.timer=5;
+
+  let t=setInterval(()=>{
+    round.timer--;
+
+    broadcast({
+      type:"waiting",
+      timer:round.timer,
+      online:clients.length
+    });
+
+    if(round.timer<=0){
+      clearInterval(t);
+      startRound();
+    }
+  },1000);
+}
+
+/* ================= HTTP (HTML) ================= */
+
+const html = `
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Risk Gift FINAL</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk Gift</title>
 
 <style>
 body{
   margin:0;
   font-family:Arial;
   color:white;
-  background: radial-gradient(circle at top,#2e1065,#020617);
+  background: radial-gradient(circle,#2e1065,#020617);
 }
 
-canvas#stars{
-  position:fixed;
-  width:100%;
-  height:100%;
-  z-index:-1;
+/* HEADER */
+.header{
+  display:flex;
+  justify-content:space-between;
+  padding:10px;
+  background:#0f172a;
 }
 
-.container{max-width:900px;margin:auto;padding:15px;}
+.online{color:#22c55e}
 
-.balance{
-  display:flex;justify-content:space-between;
-  background:#0f172a;padding:10px;border-radius:10px;
+/* 3D BUTTON */
+.btn{
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(#7c3aed,#5b21b6);
+  color:white;
+  cursor:pointer;
+  box-shadow:0 5px 0 #3b0764,0 10px 20px rgba(0,0,0,0.5);
 }
-
-.tabs{display:flex;gap:10px;margin-top:10px;}
-.tab{flex:1;padding:10px;background:#1e293b;border-radius:10px;text-align:center;cursor:pointer;}
-.active{background:#7c3aed;}
-
-.screen{display:none;}
-.activeScreen{display:block;}
-
-.mult{
-  font-size:50px;
-  text-align:center;
-  margin:10px 0;
+.btn:active{
+  transform:translateY(4px);
+  box-shadow:0 2px 0 #3b0764;
 }
 
 #graph{
-  width:100%;height:260px;background:black;border-radius:10px;position:relative;
+  height:250px;
+  background:black;
+  margin:10px;
+  border-radius:10px;
+  position:relative;
 }
+
 #rocket{
   position:absolute;
-  font-size:22px;
+  font-size:24px;
 }
-
-.controls{
-  display:flex;gap:10px;margin-top:10px;
-}
-input{flex:1;padding:10px;border-radius:6px;border:none;}
 
 .players{
-  margin-top:10px;
+  margin:10px;
   background:#0f172a;
   padding:10px;
   border-radius:10px;
-  max-height:200px;
-  overflow:auto;
 }
-
-.player{display:flex;justify-content:space-between;font-size:14px;}
-
-.history{
-  display:flex;gap:5px;margin-top:10px;flex-wrap:wrap;
-}
-.history span{
-  background:#1e293b;padding:5px;border-radius:6px;
-}
-
-.deposit{
-  margin-top:20px;background:#0f172a;padding:10px;border-radius:10px;
+.player{
+  display:flex;
+  justify-content:space-between;
 }
 </style>
 </head>
 
 <body>
 
-<canvas id="stars"></canvas>
-
-<div class="container">
-
-<div class="balance">
-  <div>Баланс: <b id="balance">1000</b> TON</div>
-  <button onclick="openTab('gift')">Пополнить</button>
+<div class="header">
+  <div>Баланс: <span id="balance">0</span> TON</div>
+  <div class="online">Онлайн: <span id="online">0</span></div>
+  <button class="btn" onclick="showDeposit()">Пополнить</button>
 </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="openTab('rocket')">🚀 Ракетка</div>
-  <div class="tab" onclick="openTab('cases')">📦 Кейсы</div>
-  <div class="tab" onclick="openTab('gift')">🎁 Подарок</div>
-</div>
-
-<div id="rocketScreen" class="screen activeScreen">
-
-<div class="mult" id="mult">Ожидание...</div>
+<div style="text-align:center;font-size:40px" id="mult">...</div>
 
 <div id="graph">
   <canvas id="g"></canvas>
   <div id="rocket">🚀</div>
 </div>
 
-<div class="controls">
-  <input type="number" id="bet" value="100">
-  <button onclick="placeBet()">Ставка</button>
-  <button onclick="cashOut()">Забрать</button>
+<div style="display:flex;gap:10px;margin:10px">
+  <input id="bet" type="number" value="100">
+  <button class="btn" onclick="bet()">Ставка</button>
+  <button class="btn" onclick="cash()">Забрать</button>
 </div>
 
 <div class="players" id="players"></div>
-<div class="history" id="history"></div>
 
-</div>
-
-<div id="cases" class="screen">
-  <div style="margin-top:40px;text-align:center;font-size:24px;">📦 Скоро</div>
-</div>
-
-<div id="gift" class="screen">
-  <div class="deposit">
-    📩 Отправьте подарок в Telegram: <b>@riskgift_bot</b><br>
-    После этого вам придут TON на баланс автоматически
-  </div>
-</div>
-
+<div id="deposit" style="display:none;padding:10px;">
+📩 Отправьте подарок в Telegram: <b>@riskgift_bot</b><br>
+После этого вам придут TON на баланс автоматически
 </div>
 
 <script>
+const ws=new WebSocket("ws://"+location.host);
 
-/* ===== STARS ===== */
-let sctx=stars.getContext("2d");
-let s=[];
-for(let i=0;i<200;i++){
-  s.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight});
-}
-function starLoop(){
-  sctx.clearRect(0,0,innerWidth,innerHeight);
-  s.forEach(st=>{
-    sctx.fillRect(st.x,st.y,2,2);
-    st.y+=0.2;
-    if(st.y>innerHeight) st.y=0;
-  });
-  requestAnimationFrame(starLoop);
-}
-starLoop();
+let player=null;
+let mult=1;
 
-/* ===== TABS ===== */
-function openTab(id){
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("activeScreen"));
-  document.getElementById(id==="rocket"?"rocketScreen":id).classList.add("activeScreen");
-}
+ws.onmessage=(msg)=>{
+  const data=JSON.parse(msg.data);
 
-/* ===== STATE ===== */
-let phase="waiting"; // waiting | playing
-let timer=5;
-let multiplier=1;
-
-let players=[];
-let history=[];
-let myBet=0;
-let myActive=false;
-
-/* ===== PLAYERS ===== */
-let names=["Alex","Ivan","Misha","Vlad","Nikita","Sasha","Oleg","Max"];
-
-function genPlayers(){
-  players=[];
-  for(let i=0;i<20;i++){
-    players.push({
-      name:names[Math.random()*names.length|0],
-      bet:Math.floor(Math.random()*1000)+50,
-      exit:(Math.random()*3+1),
-      status:"playing"
-    });
+  if(data.type==="init"){
+    player=data.player;
+    update();
   }
+
+  if(data.online!==undefined){
+    online.innerText=data.online;
+  }
+
+  if(data.type==="tick"){
+    mult=data.multiplier;
+    multEl.innerText=mult.toFixed(2)+"x";
+    draw();
+    renderPlayers(data.players);
+  }
+
+  if(data.type==="crash"){
+    multEl.innerText="💥 "+data.multiplier.toFixed(2);
+  }
+
+  if(data.type==="waiting"){
+    multEl.innerText="Старт "+data.timer;
+  }
+};
+
+function bet(){
+  ws.send(JSON.stringify({
+    type:"bet",
+    amount:+betInput.value
+  }));
 }
 
-/* ===== RENDER ===== */
-function renderPlayers(){
-  let el=playersDiv;
+function cash(){
+  ws.send(JSON.stringify({type:"cashout"}));
+}
+
+function update(){
+  balance.innerText=player.balance;
+}
+
+function renderPlayers(players){
+  let el=document.getElementById("players");
   el.innerHTML="";
   players.forEach(p=>{
     let div=document.createElement("div");
     div.className="player";
-    let status = p.status==="cash"?"✅":(p.status==="lost"?"❌":"");
-    div.innerHTML = `${p.name} — ${p.bet} TON ${status}`;
+    div.innerHTML=\`\${p.name} — \${p.bet} TON (\${p.status})\`;
     el.appendChild(div);
   });
 }
 
-/* ===== HISTORY ===== */
-function renderHistory(){
-  historyDiv.innerHTML="";
-  history.forEach(h=>{
-    let s=document.createElement("span");
-    s.innerText=h+"x";
-    historyDiv.appendChild(s);
-  });
-}
-
-/* ===== GRAPH ===== */
 let ctx=g.getContext("2d");
-let pts=[],gx=0;
+let pts=[],x=0;
 
-function drawGraph(){
-  ctx.clearRect(0,0,1000,260);
+function draw(){
+  x+=2;
+  pts.push({x:x,y:250-mult*20});
+
+  ctx.clearRect(0,0,1000,250);
   ctx.beginPath();
   ctx.strokeStyle="lime";
 
@@ -223,91 +261,77 @@ function drawGraph(){
   }
 }
 
-/* ===== LOOP ===== */
-function loop(){
-  requestAnimationFrame(loop);
-
-  if(phase==="waiting"){
-    mult.innerText="Старт через "+timer+"с";
-    return;
-  }
-
-  multiplier *= 1.01; // экспонента
-
-  let crashChance = 0.015 + multiplier*0.01;
-
-  if(Math.random()<crashChance){
-    crash();
-    return;
-  }
-
-  mult.innerText=multiplier.toFixed(2)+"x";
-
-  gx+=2;
-  pts.push({x:gx,y:260 - multiplier*30});
-
-  players.forEach(p=>{
-    if(p.status==="playing" && multiplier>=p.exit){
-      p.status="cash";
-    }
-  });
-
-  drawGraph();
-  renderPlayers();
+function showDeposit(){
+  deposit.style.display="block";
 }
 
-/* ===== ROUND ===== */
-function startRound(){
-  phase="playing";
-  multiplier=1;
-  gx=0;
-  pts=[];
-  genPlayers();
-}
-
-function crash(){
-  phase="waiting";
-
-  players.forEach(p=>{
-    if(p.status==="playing") p.status="lost";
-  });
-
-  history.unshift(multiplier.toFixed(2));
-  if(history.length>15) history.pop();
-
-  renderHistory();
-
-  timer=5;
-  let countdown=setInterval(()=>{
-    timer--;
-    if(timer<=0){
-      clearInterval(countdown);
-      startRound();
-    }
-  },1000);
-}
-
-/* ===== BET ===== */
-function placeBet(){
-  myBet=+bet.value;
-  myActive=true;
-}
-
-function cashOut(){
-  if(!myActive) return;
-  alert("Ты забрал "+Math.floor(myBet*multiplier)+" TON");
-  myActive=false;
-}
-
-/* INIT */
-const playersDiv=document.getElementById("players");
-const historyDiv=document.getElementById("history");
-const mult=document.getElementById("mult");
-
-startRound();
-loop();
-
+const multEl=document.getElementById("mult");
+const betInput=document.getElementById("bet");
 </script>
 
 </body>
 </html>
+`;
+
+/* ================= SERVER ================= */
+
+const server = http.createServer((req,res)=>{
+  res.writeHead(200,{"Content-Type":"text/html"});
+  res.end(html);
+});
+
+const wss = new WebSocket.Server({ server });
+
+wss.on("connection",(ws)=>{
+  const id=Math.random().toString(36).slice(2,9);
+
+  clients.push(ws);
+
+  players[id]={
+    id,
+    name:"User_"+id.slice(0,4),
+    balance:1000,
+    bet:0,
+    status:"idle"
+  };
+
+  ws.send(JSON.stringify({
+    type:"init",
+    player:players[id],
+    round,
+    online:clients.length
+  }));
+
+  ws.on("message",(msg)=>{
+    const data=JSON.parse(msg);
+
+    if(data.type==="bet"){
+      let p=players[id];
+      if(p.balance>=data.amount){
+        p.balance-=data.amount;
+        p.bet=data.amount;
+        p.status="playing";
+      }
+    }
+
+    if(data.type==="cashout"){
+      let p=players[id];
+      if(p.status==="playing"){
+        let win=Math.floor(p.bet*round.multiplier);
+        p.balance+=win;
+        p.status="cash";
+      }
+    }
+  });
+
+  ws.on("close",()=>{
+    clients=clients.filter(c=>c!==ws);
+    delete players[id];
+  });
+});
+
+server.listen(3000,()=>{
+  console.log("http://localhost:3000");
+});
+
+startRound();
