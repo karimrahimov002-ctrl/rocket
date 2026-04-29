@@ -2,10 +2,9 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Risk Gift 3D</title>
+<title>Risk Gift</title>
 
 <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <style>
 body{
@@ -16,53 +15,91 @@ body{
   overflow:hidden;
 }
 
-/* HEADER */
-.header{
-  position:absolute;
-  top:0;
-  width:100%;
+/* ===== COMMON ===== */
+.center{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  height:100vh;
+}
+
+.btn3d{
+  padding:15px 25px;
+  border-radius:15px;
+  background:linear-gradient(145deg,#7c3aed,#5b21b6);
+  box-shadow:0 8px 0 #3b0764, 0 15px 30px rgba(0,0,0,0.5);
+  cursor:pointer;
+  transition:0.1s;
+}
+.btn3d:active{
+  transform:translateY(6px);
+  box-shadow:0 3px 0 #3b0764;
+}
+
+/* ===== MENU ===== */
+#menu h1{
+  font-size:40px;
+  margin-bottom:20px;
+}
+
+.cards{
+  display:flex;
+  gap:20px;
+}
+
+.card{
+  width:150px;
+  height:120px;
+  border-radius:20px;
+  background:#1e293b;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  box-shadow:0 10px 25px rgba(0,0,0,0.5);
+  cursor:pointer;
+  transition:0.2s;
+}
+.card:active{
+  transform:scale(0.95);
+}
+
+.soon{
+  font-size:12px;
+  opacity:0.6;
+}
+
+/* ===== GAME ===== */
+#game{
+  display:none;
+  height:100vh;
+  flex-direction:column;
+}
+
+.top{
   display:flex;
   justify-content:space-between;
   padding:10px;
-  background:rgba(15,23,42,0.8);
-  backdrop-filter:blur(10px);
-  z-index:10;
-}
-
-.btn{
-  padding:10px 15px;
-  border:none;
-  border-radius:12px;
-  background:linear-gradient(145deg,#7c3aed,#5b21b6);
-  color:white;
-  cursor:pointer;
-  box-shadow:
-    0 6px 0 #3b0764,
-    0 12px 25px rgba(0,0,0,0.6);
-  transition:0.1s;
-}
-.btn:active{
-  transform:translateY(5px);
-  box-shadow:0 2px 0 #3b0764;
-}
-
-#ui{
-  position:absolute;
-  bottom:0;
-  width:100%;
-  padding:10px;
-  z-index:10;
+  background:#0f172a;
 }
 
 #mult{
   text-align:center;
   font-size:50px;
+  margin-top:10px;
 }
 
-.panel{
+#rocket{
+  text-align:center;
+  font-size:60px;
+  transition:transform 0.1s linear;
+}
+
+.controls{
   display:flex;
   gap:10px;
-  margin-top:10px;
+  padding:10px;
 }
 
 input{
@@ -72,44 +109,70 @@ input{
   border:none;
 }
 
-.depositBox{
-  margin-top:10px;
-  background:#0f172a;
+.players{
+  flex:1;
+  overflow:auto;
   padding:10px;
-  border-radius:10px;
+}
+
+.player{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:5px;
   font-size:14px;
+}
+
+.disabled{
+  opacity:0.5;
+  pointer-events:none;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  <div>Баланс: <span id="balance">1000</span> TON</div>
-  <div id="wallet">Кошелек не подключен</div>
+<!-- ===== MENU ===== -->
+<div id="menu" class="center">
+  <h1>Risk Gift</h1>
+
+  <div class="cards">
+    <div class="card" onclick="openGame()">
+      🚀<br>Ракетка
+    </div>
+
+    <div class="card">
+      📦 Кейсы
+      <div class="soon">Скоро</div>
+    </div>
+  </div>
 </div>
 
-<div id="ton-connect" style="position:absolute;top:60px;left:10px;z-index:10;"></div>
+<!-- ===== GAME ===== -->
+<div id="game">
 
-<div id="mult">1.00x</div>
+  <div class="top">
+    <div>Баланс: <span id="balance">10</span> TON</div>
+    <div id="wallet">Connect Wallet</div>
+  </div>
 
-<div id="ui">
-  <div class="panel">
+  <div id="ton-connect" style="padding:10px;"></div>
+
+  <div id="mult">1.00x</div>
+  <div id="rocket">🚀</div>
+
+  <div class="controls">
     <input id="bet" type="number" value="100">
-    <button class="btn" onclick="bet()">Ставка</button>
-    <button class="btn" onclick="cash()">Забрать</button>
-    <button class="btn" onclick="deposit()">TON</button>
+    <button class="btn3d" onclick="placeBet()">Ставка</button>
+    <button class="btn3d" id="cashBtn" onclick="cash()">Забрать</button>
   </div>
 
-  <div class="depositBox">
-    🎁 Подарки: отправьте подарок в Telegram на <b>@riskgift_bot</b><br>
-    после этого вам начислят TON вручную
-  </div>
+  <div class="players" id="players"></div>
+
 </div>
 
 <script>
 
-/* ===== TON CONNECT ===== */
+/* ===== TON ===== */
 const ton = new TON_CONNECT_UI.TonConnectUI({
   manifestUrl:'https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json',
   buttonRootId:'ton-connect'
@@ -117,104 +180,100 @@ const ton = new TON_CONNECT_UI.TonConnectUI({
 
 ton.onStatusChange(w=>{
   if(w){
-    wallet.innerText = "Кошелек: "+w.account.address.slice(0,6)+"...";
+    wallet.innerText="Wallet: "+w.account.address.slice(0,6)+"...";
   }
 });
 
-/* ===== DEPOSIT ===== */
-async function deposit(){
-  if(!ton.connected){
-    alert("Подключи кошелек");
-    return;
-  }
-
-  await ton.sendTransaction({
-    validUntil: Math.floor(Date.now()/1000)+600,
-    messages:[{
-      address:"UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", // замени
-      amount:"100000000"
-    }]
-  });
+/* ===== NAV ===== */
+function openGame(){
+  menu.style.display="none";
+  game.style.display="flex";
 }
 
 /* ===== GAME ===== */
 let mult=1;
-let running=true;
+let running=false;
+let myBet=0;
+let canCash=false;
 
-function gameLoop(){
-  requestAnimationFrame(gameLoop);
+/* FAKE PLAYERS */
+let names=["teuh","asdfghe","vika","Vlad","govorasha","yord","kerix","gfeu"];
+
+function genPlayers(){
+  players.innerHTML="";
+  for(let i=0;i<15;i++){
+    let div=document.createElement("div");
+    div.className="player";
+    div.innerHTML = names[Math.random()*names.length|0] +
+      " — "+(Math.random()*500|0)+" TON";
+    players.appendChild(div);
+  }
+}
+
+/* LOOP */
+function startRound(){
+  mult=1;
+  running=true;
+  canCash=false;
+  cashBtn.classList.add("disabled");
+
+  genPlayers();
+}
+
+function loop(){
+  requestAnimationFrame(loop);
 
   if(!running) return;
 
-  mult *= 1.005; // медленно
+  mult *= 1.006;
 
-  let crashChance = 0.008 + mult*0.006;
+  let crashChance = 0.01 + mult*0.008;
 
   if(Math.random()<crashChance){
     running=false;
-    document.getElementById("mult").innerText="💥 "+mult.toFixed(2);
+    multEl.innerText="💥 "+mult.toFixed(2);
 
-    setTimeout(()=>{
-      mult=1;
-      running=true;
-    },2000);
-
+    setTimeout(startRound,2000);
     return;
   }
 
-  document.getElementById("mult").innerText = mult.toFixed(2)+"x";
+  if(mult>1.2){
+    canCash=true;
+    cashBtn.classList.remove("disabled");
+  }
 
-  updateRocket();
+  multEl.innerText=mult.toFixed(2)+"x";
+
+  /* rocket animation */
+  rocket.style.transform =
+    "translateY(" + (-mult*5) + "px) rotate(" + (mult*10) + "deg)";
 }
 
-/* ===== BET ===== */
-function bet(){
-  let b=+betInput.value;
+/* BET */
+function placeBet(){
+  let b=+bet.value;
+
+  if(balance.innerText < b) return;
+
   balance.innerText -= b;
+  myBet=b;
 }
 
+/* CASH */
 function cash(){
-  balance.innerText = +balance.innerText + Math.floor(+betInput.value * mult);
+  if(!canCash) return;
+
+  let win = Math.floor(myBet * mult);
+  balance.innerText = +balance.innerText + win;
+
+  canCash=false;
 }
-
-/* ===== THREE.JS ROCKET ===== */
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000);
-
-const renderer = new THREE.WebGLRenderer({alpha:true});
-renderer.setSize(innerWidth,innerHeight);
-document.body.appendChild(renderer.domElement);
-
-/* LIGHT */
-const light = new THREE.PointLight(0xffffff,1);
-light.position.set(5,5,5);
-scene.add(light);
-
-/* ROCKET (простая 3D модель) */
-const geometry = new THREE.ConeGeometry(0.5,2,32);
-const material = new THREE.MeshStandardMaterial({color:0xff0000});
-const rocket = new THREE.Mesh(geometry,material);
-scene.add(rocket);
-
-camera.position.z = 5;
-
-/* ANIMATION */
-function updateRocket(){
-  rocket.position.x += 0.01;
-  rocket.position.y = Math.sin(mult/2);
-  rocket.rotation.z += 0.05;
-}
-
-function animate(){
-  requestAnimationFrame(animate);
-  renderer.render(scene,camera);
-}
-animate();
 
 /* INIT */
-const betInput=document.getElementById("bet");
+const multEl=document.getElementById("mult");
 
-gameLoop();
+startRound();
+loop();
 
 </script>
 
