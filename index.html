@@ -9,93 +9,92 @@
 <style>
 body{
   margin:0;
-  font-family:Arial;
+  font-family:Inter,Arial;
   color:white;
-  background: radial-gradient(circle,#2e1065,#020617);
+  background: radial-gradient(circle at 50% 20%,#4c1d95,#020617);
   overflow:hidden;
 }
 
-/* ===== COMMON ===== */
-.center{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-  height:100vh;
-}
-
-.btn3d{
-  padding:15px 25px;
-  border-radius:15px;
-  background:linear-gradient(145deg,#7c3aed,#5b21b6);
-  box-shadow:0 8px 0 #3b0764, 0 15px 30px rgba(0,0,0,0.5);
-  cursor:pointer;
-  transition:0.1s;
-}
-.btn3d:active{
-  transform:translateY(6px);
-  box-shadow:0 3px 0 #3b0764;
+/* ===== STARS ===== */
+canvas{
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:-2;
 }
 
 /* ===== MENU ===== */
-#menu h1{
-  font-size:40px;
-  margin-bottom:20px;
+#menu{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.title{
+  font-size:52px;
+  text-shadow:0 0 30px #a855f7;
 }
 
 .cards{
   display:flex;
-  gap:20px;
+  gap:25px;
+  margin-top:30px;
 }
 
 .card{
-  width:150px;
-  height:120px;
+  width:170px;
+  height:130px;
   border-radius:20px;
-  background:#1e293b;
+  background:linear-gradient(145deg,#1e293b,#0f172a);
+  box-shadow:0 20px 40px rgba(0,0,0,0.7);
   display:flex;
   justify-content:center;
   align-items:center;
   flex-direction:column;
-  box-shadow:0 10px 25px rgba(0,0,0,0.5);
   cursor:pointer;
   transition:0.2s;
 }
-.card:active{
-  transform:scale(0.95);
-}
+.card:hover{transform:translateY(-5px);}
+.card:active{transform:scale(0.95);}
 
-.soon{
-  font-size:12px;
-  opacity:0.6;
-}
+.soon{opacity:0.6;font-size:12px}
 
 /* ===== GAME ===== */
 #game{
   display:none;
-  height:100vh;
   flex-direction:column;
+  height:100vh;
 }
 
 .top{
   display:flex;
   justify-content:space-between;
   padding:10px;
-  background:#0f172a;
+  background:rgba(15,23,42,0.8);
+  backdrop-filter:blur(10px);
 }
 
 #mult{
   text-align:center;
-  font-size:50px;
+  font-size:60px;
   margin-top:10px;
+  text-shadow:0 0 20px #22c55e;
 }
 
 #rocket{
   text-align:center;
-  font-size:60px;
-  transition:transform 0.1s linear;
+  font-size:70px;
 }
 
+/* GRAPH */
+#graph{
+  height:200px;
+  margin:10px;
+}
+
+/* CONTROLS */
 .controls{
   display:flex;
   gap:10px;
@@ -104,11 +103,23 @@ body{
 
 input{
   flex:1;
-  padding:10px;
-  border-radius:10px;
+  padding:12px;
+  border-radius:12px;
   border:none;
 }
 
+.btn{
+  padding:12px;
+  border-radius:12px;
+  background:linear-gradient(145deg,#7c3aed,#5b21b6);
+  box-shadow:0 8px 0 #3b0764,0 20px 30px rgba(0,0,0,0.6);
+  cursor:pointer;
+}
+.btn:active{
+  transform:translateY(5px);
+}
+
+/* PLAYERS */
 .players{
   flex:1;
   overflow:auto;
@@ -117,9 +128,15 @@ input{
 
 .player{
   display:flex;
-  justify-content:space-between;
-  margin-bottom:5px;
-  font-size:14px;
+  align-items:center;
+  gap:10px;
+  margin-bottom:6px;
+}
+
+.avatar{
+  width:28px;
+  height:28px;
+  border-radius:50%;
 }
 
 .disabled{
@@ -131,25 +148,20 @@ input{
 
 <body>
 
-<!-- ===== MENU ===== -->
-<div id="menu" class="center">
-  <h1>Risk Gift</h1>
+<canvas id="stars"></canvas>
+
+<!-- MENU -->
+<div id="menu">
+  <div class="title">Risk Gift</div>
 
   <div class="cards">
-    <div class="card" onclick="openGame()">
-      🚀<br>Ракетка
-    </div>
-
-    <div class="card">
-      📦 Кейсы
-      <div class="soon">Скоро</div>
-    </div>
+    <div class="card" onclick="openGame()">🚀 Ракетка</div>
+    <div class="card">📦 Кейсы <div class="soon">Скоро</div></div>
   </div>
 </div>
 
-<!-- ===== GAME ===== -->
+<!-- GAME -->
 <div id="game">
-
   <div class="top">
     <div>Баланс: <span id="balance">10</span> TON</div>
     <div id="wallet">Connect Wallet</div>
@@ -157,31 +169,41 @@ input{
 
   <div id="ton-connect" style="padding:10px;"></div>
 
-  <div id="mult">1.00x</div>
+  <div id="mult">Ожидание...</div>
+  <canvas id="graph"></canvas>
   <div id="rocket">🚀</div>
 
   <div class="controls">
     <input id="bet" type="number" value="100">
-    <button class="btn3d" onclick="placeBet()">Ставка</button>
-    <button class="btn3d" id="cashBtn" onclick="cash()">Забрать</button>
+    <input id="auto" type="number" placeholder="Авто кэшаут (x)">
+    <button class="btn" onclick="placeBet()">Поставить</button>
+    <button class="btn disabled" id="cashBtn" onclick="cash()">Забрать</button>
   </div>
 
   <div class="players" id="players"></div>
-
 </div>
 
 <script>
 
+/* ===== STARS ===== */
+let ctxS=stars.getContext("2d");
+let starArr=[...Array(150)].map(()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight}));
+
+function starLoop(){
+  ctxS.clearRect(0,0,innerWidth,innerHeight);
+  starArr.forEach(s=>{
+    ctxS.fillRect(s.x,s.y,2,2);
+    s.y+=0.4;
+    if(s.y>innerHeight)s.y=0;
+  });
+  requestAnimationFrame(starLoop);
+}
+starLoop();
+
 /* ===== TON ===== */
-const ton = new TON_CONNECT_UI.TonConnectUI({
+const ton=new TON_CONNECT_UI.TonConnectUI({
   manifestUrl:'https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json',
   buttonRootId:'ton-connect'
-});
-
-ton.onStatusChange(w=>{
-  if(w){
-    wallet.innerText="Wallet: "+w.account.address.slice(0,6)+"...";
-  }
 });
 
 /* ===== NAV ===== */
@@ -191,89 +213,117 @@ function openGame(){
 }
 
 /* ===== GAME ===== */
-let mult=1;
-let running=false;
-let myBet=0;
-let canCash=false;
+let mult=1,time=0,crashPoint=2;
+let waiting=true,waitTime=5;
+let activeBet=false,myBet=0;
 
-/* FAKE PLAYERS */
-let names=["teuh","vika","Vlad","govorasha","yord","kerix","gfeu"];
+/* PLAYERS */
+let animals=["🐶","🐱","🦊","🐸","🐵","🐼","🐧"];
 
 function genPlayers(){
   players.innerHTML="";
-  for(let i=0;i<15;i++){
+  for(let i=0;i<20;i++){
     let div=document.createElement("div");
     div.className="player";
-    div.innerHTML = names[Math.random()*names.length|0] +
-      " — "+(Math.random()*500|0)+" TON";
+    div.innerHTML = "<div class='avatar'>"+animals[Math.random()*animals.length|0]+"</div> Player"+i+" — "+(Math.random()*500|0)+" TON";
     players.appendChild(div);
   }
 }
 
-/* LOOP */
+/* GRAPH */
+let g=graph.getContext("2d");
+let pts=[];
+
+function drawGraph(){
+  g.clearRect(0,0,graph.width,graph.height);
+  g.beginPath();
+  g.strokeStyle="#22c55e";
+  pts.forEach((p,i)=>{
+    if(i===0) g.moveTo(p.x,p.y);
+    else g.lineTo(p.x,p.y);
+  });
+  g.stroke();
+}
+
+/* ROUND */
 function startRound(){
+  time=0;
   mult=1;
-  running=false;
+  crashPoint=1+Math.random()*9;
   waiting=true;
   waitTime=5;
-  canCash=false;
-  cashBtn.classList.add("disabled");
-
+  activeBet=false;
+  pts=[];
   genPlayers();
 }
 
+/* LOOP */
 function loop(){
   requestAnimationFrame(loop);
 
-  if(!running) return;
+  if(waiting){
+    multEl.innerText="Старт через "+waitTime+"с";
+    return;
+  }
 
-  mult *= 1.002;
+  time+=0.016;
+  mult=Math.exp(0.25*time);
 
-  let crashChance = 0.01 + mult*0.008;
-
-  if(Math.random()<crashChance){
-    running=false;
+  if(mult>=crashPoint){
     multEl.innerText="💥 "+mult.toFixed(2);
-
+    activeBet=false;
     setTimeout(startRound,2000);
     return;
   }
 
-  if(mult>1.2){
-    canCash=true;
+  if(activeBet){
     cashBtn.classList.remove("disabled");
+
+    let autoVal=parseFloat(auto.value);
+    if(autoVal && mult>=autoVal) cash();
   }
 
   multEl.innerText=mult.toFixed(2)+"x";
 
-  /* rocket animation */
-  rocket.style.transform =
-    "translateY(" + (-mult*5) + "px) rotate(" + (mult*10) + "deg)";
+  /* rocket */
+  rocket.style.transform="translateY("+(-Math.pow(mult,1.4)*3)+"px)";
+
+  /* graph */
+  pts.push({x:pts.length*2,y:200-mult*20});
+  drawGraph();
 }
+
+/* TIMER */
+setInterval(()=>{
+  if(waiting){
+    waitTime--;
+    if(waitTime<=0) waiting=false;
+  }
+},1000);
 
 /* BET */
 function placeBet(){
+  if(activeBet) return;
   let b=+bet.value;
-
   if(balance.innerText < b) return;
 
   balance.innerText -= b;
   myBet=b;
+  activeBet=true;
 }
 
 /* CASH */
 function cash(){
-  if(!canCash) return;
+  if(!activeBet) return;
 
-  let win = Math.floor(myBet * mult);
+  let win=Math.floor(myBet*mult);
   balance.innerText = +balance.innerText + win;
 
-  canCash=false;
+  activeBet=false;
 }
 
 /* INIT */
 const multEl=document.getElementById("mult");
-
 startRound();
 loop();
 
