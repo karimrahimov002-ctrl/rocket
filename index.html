@@ -197,7 +197,7 @@ let myBet=0;
 let canCash=false;
 
 /* FAKE PLAYERS */
-let names=["teuh","asdfghe","vika","Vlad","govorasha","yord","kerix","gfeu"];
+let names=["teuh","vika","Vlad","govorasha","yord","kerix","gfeu"];
 
 function genPlayers(){
   players.innerHTML="";
@@ -225,7 +225,7 @@ function loop(){
 
   if(!running) return;
 
-  mult *= 1.006;
+  mult *= 1.002;
 
   let crashChance = 0.01 + mult*0.008;
 
