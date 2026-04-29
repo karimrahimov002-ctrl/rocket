@@ -213,7 +213,9 @@ function genPlayers(){
 /* LOOP */
 function startRound(){
   mult=1;
-  running=true;
+  running=false;
+  waiting=true;
+  waitTime=5;
   canCash=false;
   cashBtn.classList.add("disabled");
 
