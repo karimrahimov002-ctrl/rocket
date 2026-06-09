@@ -1,257 +1,367 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NFT Case System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Analytics Dashboard v4.0</title>
+    <!-- Подключение иконок -->
+    <link rel="stylesheet" href="https://cloudflare.com">
+    <!-- Подключение библиотеки графиков -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        /* --- КАРКАС И СТИЛИ (~400 строк) --- */
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-purple: #c084fc;
+            --accent-red: #f87171;
+            --sidebar-width: 260px;
+        }
 
-<style>
-body{
-  margin:0;
-  background:#0e0e0e;
-  color:#fff;
-  font-family:Arial;
-  text-align:center;
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
 
-h1{margin-top:20px;}
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-.panel{
-  background:#1b1b1b;
-  margin:10px;
-  padding:15px;
-  border-radius:12px;
-}
+        /* Боковое меню */
+        aside {
+            width: var(--sidebar-width);
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--bg-tertiary);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
 
-button{
-  padding:12px 18px;
-  margin:5px;
-  border:none;
-  border-radius:10px;
-  background:#4c6fff;
-  color:white;
-  cursor:pointer;
-  font-size:14px;
-}
+        .brand {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
 
-button:hover{background:#3b56d1;}
+        .menu-group {
+            padding: 20px 12px;
+        }
 
-.case-grid{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
+        .menu-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-left: 12px;
+        }
 
-.case{
-  padding:10px;
-  background:#222;
-  border-radius:10px;
-  cursor:pointer;
-}
-.case:hover{background:#333;}
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
 
-.reel{
-  width:95%;
-  margin:20px auto;
-  overflow:hidden;
-  border:2px solid #333;
-  border-radius:12px;
-  position:relative;
-  height:140px;
-}
+        .menu-item:hover, .menu-item.active {
+            background-color: var(--bg-tertiary);
+            color: var(--text-main);
+        }
 
-.line{
-  display:flex;
-  transition: transform 4s cubic-bezier(.12,.85,.25,1);
-}
+        .menu-item.active {
+            border-left: 4px solid var(--accent-blue);
+        }
 
-.item{
-  min-width:140px;
-  height:120px;
-  margin:10px;
-  background:#2a2a2a;
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-}
+        .user-profile {
+            padding: 16px;
+            border-top: 1px solid var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-.center{
-  position:absolute;
-  left:50%;
-  top:0;
-  bottom:0;
-  width:2px;
-  background:red;
-  transform:translateX(-50%);
-}
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--accent-blue), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
 
-.row{
-  display:flex;
-  justify-content:center;
-  flex-wrap:wrap;
-  gap:8px;
-}
+        /* Главный контейнер */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-.inv-item{
-  background:#2a2a2a;
-  padding:8px;
-  border-radius:8px;
-  font-size:12px;
-}
-</style>
+        header {
+            height: 70px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            width: 300px;
+            border: 1px solid var(--bg-tertiary);
+        }
+
+        .search-bar input {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            margin-left: 10px;
+            width: 100%;
+            outline: none;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .icon-badge {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+
+        .icon-badge::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-red);
+            border-radius: 50%;
+        }
+
+        /* Контентная зона */
+        .content-wrapper {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        /* Сетка метрик */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-info .title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .metric-info .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .metric-info .trend {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .trend.up { color: var(--accent-green); }
+        .trend.down { color: var(--accent-red); }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        /* Графики и Сетки */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* Таблицы */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid var(--bg-tertiary);
+            font-size: 0.95rem;
+        }
+
+        tr:hover td {
+            background-color: rgba(255,255,255,0.02);
+        }
+
+        .status {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status.success { background: rgba(74, 222, 128, 0.1); color: var(--accent-green); }
+        .status.pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .status.failed { background: rgba(248, 113, 113, 0.1); color: var(--accent-red); }
+
+        /* Модуль задач (Заглушка под будущие строки кода) */
+        .todo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-purple);
+        }
+
+        /* Чат / Логи систем */
+        .log-console {
+            background-color: #050b14;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 15px;
+            border-radius: 8px;
+            height: 200px;
+            overflow-y: auto;
+            color: #4ade80;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+    </style>
 </head>
-
 <body>
 
-<h1>🎁 NFT / TON CASE SYSTEM</h1>
-
-<div class="panel">
-💰 Баланс: <span id="bal">0</span>
-</div>
-
-<div class="panel case-grid">
-<div class="case" onclick="setCase('basic')">Basic (5)</div>
-<div class="case" onclick="setCase('epic')">Epic (15)</div>
-<div class="case" onclick="setCase('legendary')">Legend (30)</div>
-</div>
-
-<div class="panel">
-<button onclick="spin()">🎰 КРУТИТЬ КЕЙС</button>
-<button onclick="withdraw()">📤 ВЫВЕСТИ</button>
-</div>
-
-<div class="reel">
-<div class="center"></div>
-<div class="line" id="line"></div>
-</div>
-
-<h3 id="result"></h3>
-
-<div class="panel">
-<h3>📦 Инвентарь</h3>
-<div class="row" id="inv"></div>
-</div>
-
-<script>
-
-const API = window.location.origin;
-const uid = localStorage.getItem("uid") || crypto.randomUUID();
-localStorage.setItem("uid", uid);
-
-let currentCase = "basic";
-let balance = 10;
-let inventory = [];
-
-const visuals = [
- "🎁 Gift","💎 NFT","⭐ Rare","🔥 Epic","👑 TON"
-];
-
-function setCase(c){
-  currentCase = c;
-  alert("Выбран кейс: " + c);
-}
-
-function render(){
-  document.getElementById("bal").innerText = balance;
-
-  const inv = document.getElementById("inv");
-  inv.innerHTML = "";
-
-  inventory.forEach(i=>{
-    const d = document.createElement("div");
-    d.className = "inv-item";
-    d.innerText = i.name + " +" + i.value;
-    inv.appendChild(d);
-  });
-}
-
-function buildLine(){
-  const line = document.getElementById("line");
-  line.innerHTML = "";
-
-  for(let i=0;i<35;i++){
-    const el = document.createElement("div");
-    el.className = "item";
-    el.innerText = visuals[Math.floor(Math.random()*visuals.length)];
-    line.appendChild(el);
-  }
-}
-
-buildLine();
-
-/* ================== SPIN ================== */
-async function spin(){
-
-  buildLine();
-
-  const line = document.getElementById("line");
-  const blocks = document.querySelectorAll(".item");
-
-  const winIndex = Math.floor(Math.random()*20 + 8);
-
-  blocks[winIndex].innerText = "🎁 WIN NFT";
-
-  const offset = -(winIndex*160 - 140);
-
-  line.style.transform = `translateX(${offset}px)`;
-
-  const res = await fetch(API + "/spin", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      user_id: uid,
-      case: currentCase
-    })
-  });
-
-  const data = await res.json();
-
-  setTimeout(()=>{
-    if(data.error){
-      document.getElementById("result").innerText = data.error;
-      return;
-    }
-
-    balance = data.balance;
-    inventory = data.inventory;
-
-    document.getElementById("result").innerText =
-      "🎉 Выпало: " + data.reward.name;
-
-    render();
-  }, 4200);
-}
-
-/* ================== WITHDRAW ================== */
-async function withdraw(){
-
-  if(inventory.length === 0){
-    alert("Нет предметов");
-    return;
-  }
-
-  const item = inventory[0];
-
-  const res = await fetch(API + "/withdraw", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      user_id: uid,
-      item: item
-    })
-  });
-
-  const data = await res.json();
-
-  alert("Заявка: " + data.status);
-}
-
-render();
-
-</script>
-
-</body>
-</html>
+    <!-- БОКОВАЯ ПАНЕЛЬ -->
+    <aside>
+        <div>
+            <div class="brand">
+                <i class="fa-solid to fa-layer-group"></i>
+                <span>Nexus Core OS</span>
+            </div>
+            
+            <div class="menu-group">
+                <div class="menu-title">Основное</div>
+                <a class="menu-item active" data-target="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i> Дашборд
+                </a>
+                <a class="menu-item" data-target="analytics">
+                    <i class="fa-solid fa-chart-line"></i> Аналитика
+                </a>
+                <a class="menu-item" data-target="users">
