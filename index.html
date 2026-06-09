@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Riskgift — кейсы с подарками Telegram</title>
+    <title>Riskgift — Premium Cases & NFT Gifts</title>
     <style>
         * {
             margin: 0;
@@ -21,7 +21,6 @@
             padding: 16px 12px 32px;
         }
 
-        /* премиум-неон */
         .glow {
             text-shadow: 0 0 5px #0ff, 0 0 10px #0ff8;
         }
@@ -29,15 +28,7 @@
             border: 1px solid rgba(0, 255, 255, 0.3);
             box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
         }
-        .card-premium {
-            background: rgba(12, 18, 28, 0.7);
-            backdrop-filter: blur(12px);
-            border-radius: 32px;
-            border: 1px solid rgba(0, 255, 255, 0.25);
-            transition: all 0.2s ease;
-        }
 
-        /* анимации */
         @keyframes float {
             0% { transform: translateY(0px); }
             100% { transform: translateY(-8px); }
@@ -48,7 +39,6 @@
             100% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0); }
         }
 
-        /* экраны */
         .screen {
             transition: opacity 0.4s ease, transform 0.3s ease;
             opacity: 1;
@@ -58,7 +48,6 @@
             display: none;
         }
 
-        /* шапка */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -94,7 +83,6 @@
             transition: 0.2s;
         }
 
-        /* горизонтальная прокрутка кейсов */
         .cases-scroll {
             overflow-x: auto;
             white-space: nowrap;
@@ -150,7 +138,6 @@
             cursor: pointer;
         }
 
-        /* модальные окна */
         .modal {
             position: fixed;
             top: 0; left: 0;
@@ -174,13 +161,12 @@
             backdrop-filter: blur(20px);
             border-radius: 48px;
             width: 90%;
-            max-width: 380px;
+            max-width: 420px;
             padding: 24px 20px;
             border: 1px solid cyan;
             text-align: center;
         }
 
-        /* рулетка (горизонтальный барабан) */
         .roulette-container {
             margin: 20px 0;
             overflow-x: hidden;
@@ -206,7 +192,7 @@
             white-space: nowrap;
         }
         .inventory-list {
-            max-height: 280px;
+            max-height: 320px;
             overflow-y: auto;
             margin: 12px 0;
         }
@@ -247,35 +233,33 @@
             margin-top: 32px;
             animation: pulse-glow 2s infinite;
         }
-        .flex-btns {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 16px;
-        }
         .ton-text { color: #ffd966; }
         hr { border-color: #0ff33f; margin: 12px 0; }
         .bank-link {
             background: #2a1e44;
             margin-bottom: 12px;
-            display: inline-block;
+        }
+        .badge-nft {
+            background: #aa00ff30;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
         }
     </style>
 </head>
 <body>
 
-<!-- ПРИВЕТСТВЕННЫЙ ЭКРАН (WELCOME) -->
+<!-- WELCOME SCREEN -->
 <div id="welcomeScreen" class="screen">
     <div class="welcome-logo">
         <div class="big-logo">🎁⚡</div>
         <h1 class="glow" style="font-size: 2.6rem;">RISKGIFT</h1>
-        <p style="opacity: 0.8;">открывай кейсы | коллекционируй редкие подарки</p>
-        <button id="enterCasesBtn" class="primary-btn">🔓 КЕЙСЫ</button>
+        <p style="opacity: 0.8;">Premium Cases | NFT Telegram Gifts</p>
+        <button id="enterCasesBtn" class="primary-btn">🔓 OPEN CASES</button>
     </div>
-    <!-- нижние надписи удалены -->
 </div>
 
-<!-- ОСНОВНОЙ ЭКРАН (Витрина кейсов) -->
+<!-- MAIN SCREEN (CASES STORE) -->
 <div id="mainScreen" class="screen hide">
     <div class="top-bar">
         <div class="balance-box">💰 <span id="userBalance">0.00</span> TON</div>
@@ -284,111 +268,115 @@
             <button id="openWithdrawBtn" class="icon-btn">💸</button>
         </div>
     </div>
-    <div style="display: flex; justify-content: space-between; align-items: baseline;">
-        <h2>⚡ ВЫБЕРИ КЕЙС</h2>
-        <button id="goToBankBtn" style="background: #2a2e4a; font-size: 0.7rem; padding: 6px 12px;">🏦 Банк подарков</button>
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+        <h2>⚡ CHOOSE YOUR CASE</h2>
+        <button id="goToBankBtn" style="background: #2a2e4a; font-size: 0.7rem; padding: 6px 12px;">🏦 Gift Bank</button>
     </div>
-    <p style="font-size: 0.8rem; margin-bottom: 16px;">Горизонтальная прокрутка → | Шанс 70% TON / 20% редкий подарок / 10% NFT Gift</p>
+    <p style="font-size: 0.75rem; margin-bottom: 12px;">↻ scroll horizontally | 70% TON | 20% Rare Gift | 10% NFT Gift</p>
     <div class="cases-scroll">
         <div class="cases-grid" id="casesContainer"></div>
     </div>
 </div>
 
-<!-- МОДАЛКА РУЛЕТКИ -->
+<!-- ROULETTE MODAL -->
 <div id="rouletteModal" class="modal">
     <div class="modal-content">
-        <h3>🌀 ВРАЩЕНИЕ БАРАБАНА</h3>
+        <h3>🌀 SLOT MACHINE</h3>
         <div class="roulette-container">
             <div id="rouletteTrack" class="roulette-track"></div>
         </div>
         <p id="rouletteResultMsg" style="margin-top: 12px; min-height: 50px;"></p>
-        <button id="closeRouletteBtn" class="close-btn">Закрыть</button>
+        <button id="closeRouletteBtn" class="close-btn">Close</button>
     </div>
 </div>
 
-<!-- МОДАЛКА ИНВЕНТАРЯ И ПОПОЛНЕНИЕ ПОДАРКОМ -->
+<!-- INVENTORY MODAL (all gifts won from cases) -->
 <div id="inventoryModal" class="modal">
-    <div class="modal-content" style="max-width: 420px;">
-        <h3>📦 Мои подарки</h3>
+    <div class="modal-content">
+        <h3>📦 MY COLLECTION</h3>
         <div id="inventoryList" class="inventory-list"></div>
-        <div style="margin-top: 12px;">
-            <button id="simulateDepositGiftBtn" style="background: #3a2a6e;">🎁 Пополнить подарком → @riskgift_bank</button>
-            <button id="bankProfileBtn" style="background: #1f3a4a; margin-left: 8px;">🏦 Профиль банка</button>
+        <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center;">
+            <button id="depositFromInventoryBtn" style="background: #3a2a6e;">🎁 Deposit Gift → @riskgift_bank</button>
+            <button id="bankProfileFromInvBtn" style="background: #1f3a4a;">🏦 Bank Profile</button>
         </div>
-        <button id="closeInventoryBtn" class="close-btn">Закрыть</button>
+        <button id="closeInventoryBtn" class="close-btn">Close</button>
     </div>
 </div>
 
-<!-- МОДАЛКА ВЫВОДА (только подарки) -->
+<!-- WITHDRAW MODAL (only gift withdrawal) -->
 <div id="withdrawModal" class="modal">
     <div class="modal-content">
-        <h3>💎 Вывод подарков</h3>
-        <p>Выводите выигранные подарки на свой Telegram-аккаунт</p>
+        <h3>💎 WITHDRAW GIFTS</h3>
+        <p>Send your gifts directly to your Telegram account</p>
         <div id="withdrawGiftsList" style="max-height: 280px; overflow-y: auto; margin: 16px 0;"></div>
-        <button id="closeWithdrawBtn" class="close-btn">Закрыть</button>
+        <button id="closeWithdrawBtn" class="close-btn">Close</button>
     </div>
 </div>
 
-<!-- МОДАЛКА СИМУЛЯЦИИ ПОПОЛНЕНИЯ (отправка подарка в банк) -->
+<!-- DEPOSIT SIMULATION (sending gift to @riskgift_bank) -->
 <div id="depositGiftModal" class="modal">
     <div class="modal-content">
-        <h3>🎁 Отправить подарок в банк</h3>
-        <p>Перешлите любой свой подарок боту <strong>@riskgift_bank</strong><br>В ответ он зачислит TON на баланс.</p>
-        <div style="margin: 16px 0;">
-            <button id="depositStockingBtn" style="margin: 6px;">🧦 Xmas Stocking (0.5 TON)</button>
-            <button id="depositCloverBtn" style="margin: 6px;">🍀 Clover Pin (0.4 TON)</button>
-            <button id="depositTamaBtn" style="margin: 6px;">📟 Tama Gadget (0.6 TON)</button>
-            <button id="depositCalendarBtn" style="margin: 6px;">📅 Desk Calendar (0.35 TON)</button>
-            <button id="depositLolBtn" style="margin: 6px;">😂 Lol Pop (0.45 TON)</button>
-            <button id="depositIceBtn" style="margin: 6px;">🍦 Ice Cream (0.55 TON)</button>
-            <button id="depositSnoopBtn" style="margin: 6px;">🐶 Snoop Dogg (0.8 TON)</button>
+        <h3>🎁 DEPOSIT GIFT → BANK</h3>
+        <p>Send any rare gift to <strong>@riskgift_bank</strong><br>You will receive random <strong>2.5 – 4 TON</strong> per gift.</p>
+        <div style="margin: 16px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+            <button class="depositGiftOption" data-gift="Xmas Stocking">🧦 Xmas Stocking</button>
+            <button class="depositGiftOption" data-gift="Clover Pin">🍀 Clover Pin</button>
+            <button class="depositGiftOption" data-gift="Tama Gadget">📟 Tama Gadget</button>
+            <button class="depositGiftOption" data-gift="Desk Calendar">📅 Desk Calendar</button>
+            <button class="depositGiftOption" data-gift="Lol Pop">😂 Lol Pop</button>
+            <button class="depositGiftOption" data-gift="Ice Cream">🍦 Ice Cream</button>
+            <button class="depositGiftOption" data-gift="Snoop Dogg">🐶 Snoop Dogg</button>
         </div>
-        <button id="closeDepositModal" class="close-btn">Отмена</button>
+        <button id="closeDepositModal" class="close-btn">Cancel</button>
     </div>
 </div>
 
 <script>
-    // ---------- НОВАЯ ЛИНЕЙКА КЕЙСОВ ----------
+    // ---------- UPDATED CASE LIST (MORE CASES) ----------
     const CASES = [
-        { id: 0, name: "Бомж-Кейс", price: 0.1, icon: "🗑️" },
-        { id: 1, name: "Стартовый", price: 1, icon: "📦" },
-        { id: 2, name: "Крипто-Вортекс", price: 5, icon: "🌀" },
-        { id: 3, name: "Хайп", price: 10, icon: "🔥" },
-        { id: 4, name: "Магнат", price: 25, icon: "👑" },
-        { id: 5, name: "NFT-Империя", price: 50, icon: "🏛️" },
-        { id: 6, name: "Кит", price: 100, icon: "🐋" }
+        { id: 0, name: "Trash Case", price: 0.1, icon: "🗑️" },
+        { id: 1, name: "Starter Pack", price: 1, icon: "📦" },
+        { id: 2, name: "Crypto Vortex", price: 5, icon: "🌀" },
+        { id: 3, name: "Hype Blaze", price: 10, icon: "🔥" },
+        { id: 4, name: "Magnate", price: 25, icon: "👑" },
+        { id: 5, name: "NFT Empire", price: 50, icon: "🏛️" },
+        { id: 6, name: "Whale", price: 100, icon: "🐋" },
+        { id: 7, name: "Neon Shadow", price: 150, icon: "🌑" },
+        { id: 8, name: "Diamond Vertex", price: 250, icon: "💎" },
+        { id: 9, name: "Mythic Legion", price: 500, icon: "⚜️" }
     ];
 
-    // Новые редкие подарки (20% дроп)
+    // RARE GIFTS (English named, drop from 20% category)
     const RARE_GIFTS = [
-        { id: "xmas", name: "Xmas Stocking", icon: "🧦", valueTon: 0.5 },
-        { id: "clover", name: "Clover Pin", icon: "🍀", valueTon: 0.4 },
-        { id: "tama", name: "Tama Gadget", icon: "📟", valueTon: 0.6 },
-        { id: "calendar", name: "Desk Calendar", icon: "📅", valueTon: 0.35 },
-        { id: "lol", name: "Lol Pop", icon: "😂", valueTon: 0.45 },
-        { id: "ice", name: "Ice Cream", icon: "🍦", valueTon: 0.55 },
-        { id: "snoop", name: "Snoop Dogg", icon: "🐶", valueTon: 0.8 }
+        { id: "xmas", name: "Xmas Stocking", icon: "🧦" },
+        { id: "clover", name: "Clover Pin", icon: "🍀" },
+        { id: "tama", name: "Tama Gadget", icon: "📟" },
+        { id: "calendar", name: "Desk Calendar", icon: "📅" },
+        { id: "lol", name: "Lol Pop", icon: "😂" },
+        { id: "ice", name: "Ice Cream", icon: "🍦" },
+        { id: "snoop", name: "Snoop Dogg", icon: "🐶" }
     ];
 
-    // Сверхредкие NFT Gift (10% дроп)
-    const NFT_GIFTS = ["⭐ NFT Star", "🔴 Red Diamond", "💠 Neon Vortex NFT", "👾 Cyber Gift", "🎨 Digital Canvas"];
+    // NFT GIFTS (10% category)
+    const NFT_GIFTS = ["⭐ NFT Star", "🔴 Red Diamond", "💠 Neon Vortex", "👾 Cyber Gift", "🎨 Digital Canvas"];
 
-    let inventory = {}; // ключи: xmas, clover, tama, calendar, lol, ice, snoop, nft[]
+    // Inventory structure: each rare gift count + nft array
+    let inventory = {};
     function initInventory() {
-        const empty = {};
-        RARE_GIFTS.forEach(g => empty[g.id] = 0);
-        empty.nft = [];
-        return empty;
+        let inv = {};
+        RARE_GIFTS.forEach(g => inv[g.id] = 0);
+        inv.nft = [];
+        return inv;
     }
 
-    let userTonBalance = 15.0;
+    let userTonBalance = 25.0;   // starting balance
     let userInventory = initInventory();
 
-    // Загрузка / сохранение
+    // Load / Save
     function loadData() {
         const savedBalance = localStorage.getItem('riskgift_balance');
         if (savedBalance !== null) userTonBalance = parseFloat(savedBalance);
-        const savedInv = localStorage.getItem('riskgift_inventory_v2');
+        const savedInv = localStorage.getItem('riskgift_inventory_v3');
         if (savedInv) {
             try {
                 const inv = JSON.parse(savedInv);
@@ -400,17 +388,15 @@
     }
     function saveData() {
         localStorage.setItem('riskgift_balance', userTonBalance.toFixed(6));
-        localStorage.setItem('riskgift_inventory_v2', JSON.stringify(userInventory));
+        localStorage.setItem('riskgift_inventory_v3', JSON.stringify(userInventory));
     }
 
     function updateBalanceUI() {
         const balSpan = document.getElementById('userBalance');
         if (balSpan) balSpan.innerText = userTonBalance.toFixed(4);
-        const wb = document.getElementById('withdrawBalance');
-        if (wb) wb.innerText = userTonBalance.toFixed(4);
     }
 
-    // Добавить подарок (обычный редкий или NFT)
+    // Add rare gift (from case drop)
     function addRareGift(giftId) {
         if (userInventory[giftId] !== undefined) {
             userInventory[giftId]++;
@@ -424,7 +410,7 @@
         saveData();
     }
 
-    // Генерация выигрыша по кейсу (70% TON, 20% редкий подарок, 10% NFT)
+    // Generate reward from case (70% TON, 20% rare gift, 10% NFT)
     function generateReward(casePrice) {
         const rand = Math.random();
         if (rand < 0.7) {
@@ -433,39 +419,36 @@
             winTon = Math.round(winTon * 1000) / 1000;
             return { type: 'ton', value: winTon, displayName: `${winTon.toFixed(3)} TON` };
         } else if (rand < 0.9) {
-            // 20% - случайный редкий подарок из списка RARE_GIFTS
             const idx = Math.floor(Math.random() * RARE_GIFTS.length);
             const gift = RARE_GIFTS[idx];
             return { type: 'rare_gift', giftId: gift.id, giftName: gift.name, icon: gift.icon, displayName: `${gift.icon} ${gift.name}` };
         } else {
-            // 10% NFT Gift
             const nftName = NFT_GIFTS[Math.floor(Math.random() * NFT_GIFTS.length)];
-            return { type: 'nft', nftName: nftName, displayName: `🎁✨ ${nftName} (NFT Gift)` };
+            return { type: 'nft', nftName: nftName, displayName: `✨ ${nftName} (NFT Gift)` };
         }
     }
 
-    // рулетка с анимацией
+    // Roulette animation
     function showRouletteWithResult(casePrice, onComplete) {
         const rouletteTrack = document.getElementById('rouletteTrack');
         const resultMsg = document.getElementById('rouletteResultMsg');
         const modal = document.getElementById('rouletteModal');
         const reward = generateReward(casePrice);
         
-        // подготовка вариантов для рулетки
         let slotItems = [];
-        for(let i=0;i<8;i++) slotItems.push({ label: "❓ ???", type: "dummy" });
+        for(let i=0;i<6;i++) slotItems.push({ label: "❓ ???", type: "dummy" });
         for(let i=0;i<14;i++) slotItems.push({ label: `${(casePrice * (0.1 + Math.random()*0.4)).toFixed(2)} TON`, type: "ton" });
         RARE_GIFTS.forEach(g => {
-            for(let i=0;i<5;i++) slotItems.push({ label: `${g.icon} ${g.name}`, type: g.id });
+            for(let i=0;i<6;i++) slotItems.push({ label: `${g.icon} ${g.name}`, type: g.id });
         });
         NFT_GIFTS.forEach(nft => {
-            for(let i=0;i<3;i++) slotItems.push({ label: `✨ ${nft}`, type: "nft" });
+            for(let i=0;i<4;i++) slotItems.push({ label: `✨ ${nft}`, type: "nft" });
         });
         slotItems = slotItems.sort(() => Math.random() - 0.5);
         
         let targetIndex = 0;
         if (reward.type === 'ton') {
-            targetIndex = slotItems.findIndex(item => item.type === 'ton' && !isNaN(parseFloat(item.label)));
+            targetIndex = slotItems.findIndex(item => item.type === 'ton');
             if (targetIndex === -1) targetIndex = 2;
         } else if (reward.type === 'rare_gift') {
             targetIndex = slotItems.findIndex(item => item.type === reward.giftId);
@@ -499,34 +482,33 @@
         }, 20);
         
         modal.classList.add('active');
-        resultMsg.innerHTML = "🌀 Барабан крутится...";
+        resultMsg.innerHTML = "🌀 Spinning...";
         
         const finishHandler = () => {
             rouletteTrack.removeEventListener('transitionend', finishHandler);
             let rewardText = '';
             if (reward.type === 'ton') {
                 userTonBalance += reward.value;
-                rewardText = `💰 Выигрыш: ${reward.value} TON зачислен!`;
+                rewardText = `💰 You won ${reward.value} TON!`;
                 saveData();
                 updateBalanceUI();
             } else if (reward.type === 'rare_gift') {
                 addRareGift(reward.giftId);
-                rewardText = `🎁 Поздравляем! Выпал редкий подарок: ${reward.displayName}`;
+                rewardText = `🎁 Rare Gift: ${reward.displayName} added to inventory!`;
             } else if (reward.type === 'nft') {
                 addNftGift(reward.nftName);
-                rewardText = `💎✨ РЕДКИЙ NFT GIFT! ${reward.nftName} добавлен в инвентарь!`;
+                rewardText = `💎 NFT GIFT! ${reward.nftName} collected!`;
             }
-            resultMsg.innerHTML = `${rewardText}`;
+            resultMsg.innerHTML = rewardText;
             if (onComplete) onComplete();
         };
         rouletteTrack.addEventListener('transitionend', finishHandler, { once: true });
         setTimeout(() => finishHandler(), 2800);
     }
     
-    // Открыть кейс
     function openCase(caseObj) {
         if (userTonBalance < caseObj.price) {
-            alert(`❌ Не хватает TON! Нужно ${caseObj.price} TON`);
+            alert(`❌ Insufficient TON! Need ${caseObj.price} TON`);
             return;
         }
         userTonBalance -= caseObj.price;
@@ -535,7 +517,6 @@
         showRouletteWithResult(caseObj.price, () => {});
     }
     
-    // отрисовка кейсов (горизонтальная сетка)
     function renderCases() {
         const container = document.getElementById('casesContainer');
         if (!container) return;
@@ -547,7 +528,7 @@
                 <div class="case-3d-icon">${c.icon}</div>
                 <div class="case-title">${c.name}</div>
                 <div class="case-price">${c.price} TON</div>
-                <button class="btn-open" data-id="${c.id}">🎲 Открыть</button>
+                <button class="btn-open" data-id="${c.id}">🎲 OPEN</button>
             `;
             container.appendChild(div);
         });
@@ -561,66 +542,62 @@
         });
     }
     
-    // Отрисовка инвентаря (модалка)
+    // INVENTORY DISPLAY (all gifts won from cases)
     function refreshInventoryModal() {
         const container = document.getElementById('inventoryList');
         if (!container) return;
         container.innerHTML = '';
-        // редкие подарки
+        // Show rare gifts
         for (const g of RARE_GIFTS) {
             const count = userInventory[g.id] || 0;
             if (count > 0) {
-                container.innerHTML += `<div class="gift-row">${g.icon} ${g.name} x${count} <span class="ton-text">(${g.valueTon} TON)</span></div>`;
+                container.innerHTML += `<div class="gift-row">${g.icon} ${g.name} x${count} <span class="ton-text">(rare gift)</span></div>`;
             }
         }
-        // NFT
+        // Show NFT gifts
         if (userInventory.nft.length > 0) {
-            userInventory.nft.forEach((n, idx) => {
-                container.innerHTML += `<div class="gift-row">🎁 ${n} <span class="ton-text">(NFT-редкость)</span></div>`;
+            userInventory.nft.forEach((nft, idx) => {
+                container.innerHTML += `<div class="gift-row">🎁 ${nft} <span class="badge-nft">NFT Gift</span></div>`;
             });
         }
-        if (container.innerHTML === '') container.innerHTML = '<div style="text-align:center; opacity:0.7;">У вас пока нет подарков. Открывайте кейсы!</div>';
+        if (container.innerHTML === '') container.innerHTML = '<div style="text-align:center; opacity:0.7;">No gifts yet. Open cases!</div>';
     }
     
-    // Отрисовка списка вывода подарков (только кнопка вывода)
+    // WITHDRAW (only gift withdrawal)
     function refreshWithdrawGifts() {
         const giftsDiv = document.getElementById('withdrawGiftsList');
         if (!giftsDiv) return;
         giftsDiv.innerHTML = '';
-        // Редкие подарки с кнопкой вывода
         for (const g of RARE_GIFTS) {
             const count = userInventory[g.id] || 0;
             if (count > 0) {
-                giftsDiv.innerHTML += `<div class="gift-row">${g.icon} ${g.name} x${count} <button class="withdrawRareBtn" data-gift-id="${g.id}">Вывести</button></div>`;
+                giftsDiv.innerHTML += `<div class="gift-row">${g.icon} ${g.name} x${count} <button class="withdrawRareBtn" data-gift-id="${g.id}">Withdraw</button></div>`;
             }
         }
-        // NFT подарки
         userInventory.nft.forEach((nft, idx) => {
-            giftsDiv.innerHTML += `<div class="gift-row">🎁 ${nft} <button class="withdrawNftBtn" data-idx="${idx}">Вывести NFT</button></div>`;
+            giftsDiv.innerHTML += `<div class="gift-row">🎁 ${nft} <button class="withdrawNftBtn" data-idx="${idx}">Withdraw NFT</button></div>`;
         });
-        if (giftsDiv.innerHTML === '') giftsDiv.innerHTML = '<div style="opacity:0.7;">Нет подарков для вывода</div>';
+        if (giftsDiv.innerHTML === '') giftsDiv.innerHTML = '<div style="opacity:0.7;">Nothing to withdraw</div>';
         
-        // обработчики вывода редких подарков
         document.querySelectorAll('.withdrawRareBtn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const giftId = btn.getAttribute('data-gift-id');
                 if (userInventory[giftId] > 0) {
                     userInventory[giftId]--;
                     saveData();
-                    alert(`✅ Подарок успешно отправлен вам в Telegram! (бот @riskgift_bank)`);
+                    alert(`✅ ${giftId} sent to your Telegram! (bot @riskgift_bank)`);
                     refreshInventoryModal();
                     refreshWithdrawGifts();
                 }
             });
         });
-        // вывод NFT
         document.querySelectorAll('.withdrawNftBtn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.getAttribute('data-idx'));
                 if (!isNaN(idx) && userInventory.nft[idx]) {
                     const removed = userInventory.nft.splice(idx, 1);
                     saveData();
-                    alert(`✅ NFT Gift "${removed[0]}" отправлен в ваш Telegram аккаунт!`);
+                    alert(`✅ NFT Gift "${removed[0]}" delivered to your Telegram!`);
                     refreshInventoryModal();
                     refreshWithdrawGifts();
                 }
@@ -628,16 +605,18 @@
         });
     }
     
-    // Пополнение через отправку подарка @riskgift_bank (симуляция)
-    function simulateDepositGift(giftValue, giftName) {
-        userTonBalance += giftValue;
+    // DEPOSIT via @riskgift_bank : random 2.5 - 4 TON per any gift
+    function depositGiftToBank(giftName) {
+        const randomTon = 2.5 + Math.random() * 1.5; // range 2.5 .. 4.0
+        const rounded = Math.round(randomTon * 1000) / 1000;
+        userTonBalance += rounded;
         saveData();
         updateBalanceUI();
-        alert(`✅ Webhook: Подарок "${giftName}" получен ботом @riskgift_bank!\nЗачислено ${giftValue.toFixed(2)} TON на баланс.`);
+        alert(`🎁 Gift "${giftName}" sent to @riskgift_bank.\n✅ +${rounded} TON credited to your balance.`);
         document.getElementById('depositGiftModal').classList.remove('active');
     }
     
-    // Инициализация модалок и событий
+    // ---- MODAL INIT ----
     function initModals() {
         const rouletteModal = document.getElementById('rouletteModal');
         document.getElementById('closeRouletteBtn').onclick = () => rouletteModal.classList.remove('active');
@@ -654,29 +633,29 @@
         openWithdraw.onclick = () => { refreshWithdrawGifts(); withdrawModal.classList.add('active'); };
         closeWithdraw.onclick = () => withdrawModal.classList.remove('active');
         
-        // Банк профиль и пополнение
-        const bankProfile = document.getElementById('bankProfileBtn');
-        const goToBank = document.getElementById('goToBankBtn');
-        const openBank = () => window.open('https://t.me/riskgift_bank', '_blank');
-        if (bankProfile) bankProfile.onclick = openBank;
-        if (goToBank) goToBank.onclick = openBank;
+        // Bank profile link
+        const openBankProfile = () => window.open('https://t.me/riskgift_bank', '_blank');
+        const bankProfileBtn = document.getElementById('bankProfileFromInvBtn');
+        const goToBankBtn = document.getElementById('goToBankBtn');
+        if (bankProfileBtn) bankProfileBtn.onclick = openBankProfile;
+        if (goToBankBtn) goToBankBtn.onclick = openBankProfile;
         
-        const simDepositBtn = document.getElementById('simulateDepositGiftBtn');
+        // Deposit button inside inventory
+        const depositFromInv = document.getElementById('depositFromInventoryBtn');
         const depositModal = document.getElementById('depositGiftModal');
-        simDepositBtn.onclick = () => depositModal.classList.add('active');
+        depositFromInv.onclick = () => depositModal.classList.add('active');
         document.getElementById('closeDepositModal').onclick = () => depositModal.classList.remove('active');
         
-        // кнопки депозита подарков
-        document.getElementById('depositStockingBtn').onclick = () => simulateDepositGift(0.5, "Xmas Stocking");
-        document.getElementById('depositCloverBtn').onclick = () => simulateDepositGift(0.4, "Clover Pin");
-        document.getElementById('depositTamaBtn').onclick = () => simulateDepositGift(0.6, "Tama Gadget");
-        document.getElementById('depositCalendarBtn').onclick = () => simulateDepositGift(0.35, "Desk Calendar");
-        document.getElementById('depositLolBtn').onclick = () => simulateDepositGift(0.45, "Lol Pop");
-        document.getElementById('depositIceBtn').onclick = () => simulateDepositGift(0.55, "Ice Cream");
-        document.getElementById('depositSnoopBtn').onclick = () => simulateDepositGift(0.8, "Snoop Dogg");
+        // attach deposit options
+        document.querySelectorAll('.depositGiftOption').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const giftName = btn.getAttribute('data-gift');
+                depositGiftToBank(giftName);
+            });
+        });
     }
     
-    // Переход на главный экран
+    // start app
     document.getElementById('enterCasesBtn').addEventListener('click', () => {
         document.getElementById('welcomeScreen').classList.add('hide');
         document.getElementById('mainScreen').classList.remove('hide');
