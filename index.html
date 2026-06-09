@@ -690,14 +690,7 @@
     updateBalanceUI();
 </script>
 
-<!-- Техническое задание / описание архитектуры внизу (не влияет на геймплей) -->
-<div style="margin-top: 40px; background: #03060cee; border-radius: 28px; padding: 20px; font-size: 0.75rem; border: 1px solid #0ff3;">
-    <h3 style="color: cyan;">📐 Riskgift — ТЗ и архитектура (обновлено)</h3>
-    <p><strong>Механика:</strong> 70% TON (10-50% от цены кейса), 20% редкие подарки (Xmas Stocking, Clover Pin, Tama Gadget, Desk Calendar, Lol Pop, Ice Cream, Snoop Dogg), 10% NFT Gifts. Горизонтальная прокрутка кейсов, рулетка с физикой.</p>
-    <p><strong>Пополнение:</strong> Пользователь отправляет любой подарок на @riskgift_bank → Webhook конвертирует в TON по фиксированной ценности. В интерфейсе кнопка "Пополнить подарком" → симуляция отправки.</p>
-    <p><strong>Вывод:</strong> Только подарки (редкие и NFT) выводятся одной кнопкой "Вывести" — бот отправляет подарок в Telegram пользователя.</p>
-    <p><strong>Банк подарков:</strong> кнопки перехода на профиль @riskgift_bank (tg://resolve?domain=riskgift_bank).</p>
-    <p><strong>Хранение:</strong> localStorage (user_id, ton_balance, инвентарь). В реальном проекте PostgreSQL + интеграция TON SDK.</p>
+
 </div>
 </body>
 </html>
