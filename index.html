@@ -1,219 +1,256 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <title>NFT Case App</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NFT Case System</title>
 
-  <style>
-    body {
-      font-family: Arial;
-      background: #0e0e0e;
-      color: white;
-      text-align: center;
-      margin: 0;
-      padding: 20px;
-    }
+<style>
+body{
+  margin:0;
+  background:#0e0e0e;
+  color:#fff;
+  font-family:Arial;
+  text-align:center;
+}
 
-    .panel {
-      background: #1b1b1b;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
+h1{margin-top:20px;}
 
-    button {
-      padding: 12px 18px;
-      border: none;
-      border-radius: 10px;
-      background: #4c6fff;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-      margin: 5px;
-    }
+.panel{
+  background:#1b1b1b;
+  margin:10px;
+  padding:15px;
+  border-radius:12px;
+}
 
-    .case-wrapper {
-      overflow: hidden;
-      width: 100%;
-      border-radius: 12px;
-      background: #111;
-      border: 2px solid #333;
-      position: relative;
-      margin-top: 20px;
-    }
+button{
+  padding:12px 18px;
+  margin:5px;
+  border:none;
+  border-radius:10px;
+  background:#4c6fff;
+  color:white;
+  cursor:pointer;
+  font-size:14px;
+}
 
-    .line {
-      display: flex;
-      width: max-content;
-      transition: transform 4s cubic-bezier(0.12, 0.85, 0.25, 1);
-    }
+button:hover{background:#3b56d1;}
 
-    .item {
-      width: 130px;
-      height: 120px;
-      margin: 10px;
-      background: #2a2a2a;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      text-align: center;
-    }
+.case-grid{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
 
-    .center {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 50%;
-      width: 2px;
-      background: red;
-      transform: translateX(-50%);
-    }
+.case{
+  padding:10px;
+  background:#222;
+  border-radius:10px;
+  cursor:pointer;
+}
+.case:hover{background:#333;}
 
-    .win {
-      margin-top: 15px;
-      color: #00ff99;
-      font-size: 18px;
-    }
+.reel{
+  width:95%;
+  margin:20px auto;
+  overflow:hidden;
+  border:2px solid #333;
+  border-radius:12px;
+  position:relative;
+  height:140px;
+}
 
-    input {
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      margin-top: 10px;
-      width: 80%;
-    }
-  </style>
+.line{
+  display:flex;
+  transition: transform 4s cubic-bezier(.12,.85,.25,1);
+}
+
+.item{
+  min-width:140px;
+  height:120px;
+  margin:10px;
+  background:#2a2a2a;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+}
+
+.center{
+  position:absolute;
+  left:50%;
+  top:0;
+  bottom:0;
+  width:2px;
+  background:red;
+  transform:translateX(-50%);
+}
+
+.row{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.inv-item{
+  background:#2a2a2a;
+  padding:8px;
+  border-radius:8px;
+  font-size:12px;
+}
+</style>
 </head>
 
 <body>
 
-<h1>🎁 NFT Case System</h1>
+<h1>🎁 NFT / TON CASE SYSTEM</h1>
 
 <div class="panel">
-  <div id="balance">Баланс: ...</div>
-
-  <button onclick="login()">Login</button>
-  <button onclick="openCase()">Open NFT Case</button>
+💰 Баланс: <span id="bal">0</span>
 </div>
 
-<div class="case-wrapper">
-  <div class="center"></div>
-  <div class="line" id="line"></div>
+<div class="panel case-grid">
+<div class="case" onclick="setCase('basic')">Basic (5)</div>
+<div class="case" onclick="setCase('epic')">Epic (15)</div>
+<div class="case" onclick="setCase('legendary')">Legend (30)</div>
 </div>
-
-<div class="win" id="win"></div>
 
 <div class="panel">
-  <h3>📦 Withdraw NFT</h3>
-  <input id="item" placeholder="Название предмета"/>
-  <button onclick="withdraw()">Send Withdraw Request</button>
+<button onclick="spin()">🎰 КРУТИТЬ КЕЙС</button>
+<button onclick="withdraw()">📤 ВЫВЕСТИ</button>
+</div>
+
+<div class="reel">
+<div class="center"></div>
+<div class="line" id="line"></div>
+</div>
+
+<h3 id="result"></h3>
+
+<div class="panel">
+<h3>📦 Инвентарь</h3>
+<div class="row" id="inv"></div>
 </div>
 
 <script>
-const tg = window.Telegram.WebApp;
-tg.expand();
 
 const API = window.location.origin;
-let user = null;
+const uid = localStorage.getItem("uid") || crypto.randomUUID();
+localStorage.setItem("uid", uid);
 
-/* NFT items */
-const items = [
-  "🎁 Telegram Gift",
-  "💎 NFT Rare Gift",
-  "⭐ Premium Gift",
-  "🔥 Legendary Gift",
-  "🎉 Common Gift"
+let currentCase = "basic";
+let balance = 10;
+let inventory = [];
+
+const visuals = [
+ "🎁 Gift","💎 NFT","⭐ Rare","🔥 Epic","👑 TON"
 ];
 
-function buildLine() {
+function setCase(c){
+  currentCase = c;
+  alert("Выбран кейс: " + c);
+}
+
+function render(){
+  document.getElementById("bal").innerText = balance;
+
+  const inv = document.getElementById("inv");
+  inv.innerHTML = "";
+
+  inventory.forEach(i=>{
+    const d = document.createElement("div");
+    d.className = "inv-item";
+    d.innerText = i.name + " +" + i.value;
+    inv.appendChild(d);
+  });
+}
+
+function buildLine(){
   const line = document.getElementById("line");
   line.innerHTML = "";
 
-  for (let i = 0; i < 30; i++) {
+  for(let i=0;i<35;i++){
     const el = document.createElement("div");
     el.className = "item";
-    el.innerText = items[Math.floor(Math.random() * items.length)];
+    el.innerText = visuals[Math.floor(Math.random()*visuals.length)];
     line.appendChild(el);
   }
 }
 
-/* LOGIN */
-async function login() {
-  const res = await fetch(API + "/auth", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(tg.initDataUnsafe)
-  });
+buildLine();
 
-  user = await res.json();
-  document.getElementById("balance").innerText =
-    "Баланс: " + user.balance;
-}
+/* ================== SPIN ================== */
+async function spin(){
 
-/* OPEN CASE */
-async function openCase() {
-  if (!user) return alert("login first");
+  buildLine();
 
-  document.getElementById("win").innerText = "";
+  const line = document.getElementById("line");
+  const blocks = document.querySelectorAll(".item");
 
-  const res = await fetch(API + "/open/" + user.telegram_id, {
-    method: "POST"
+  const winIndex = Math.floor(Math.random()*20 + 8);
+
+  blocks[winIndex].innerText = "🎁 WIN NFT";
+
+  const offset = -(winIndex*160 - 140);
+
+  line.style.transform = `translateX(${offset}px)`;
+
+  const res = await fetch(API + "/spin", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      user_id: uid,
+      case: currentCase
+    })
   });
 
   const data = await res.json();
 
-  document.getElementById("balance").innerText =
-    "Баланс: " + data.balance;
+  setTimeout(()=>{
+    if(data.error){
+      document.getElementById("result").innerText = data.error;
+      return;
+    }
 
-  animateRoll(data.reward);
-}
+    balance = data.balance;
+    inventory = data.inventory;
 
-/* CS STYLE ROLL */
-function animateRoll(reward) {
-  buildLine();
+    document.getElementById("result").innerText =
+      "🎉 Выпало: " + data.reward.name;
 
-  const line = document.getElementById("line");
-  const itemsDOM = document.querySelectorAll(".item");
-
-  const winIndex = Math.floor(Math.random() * 20 + 5);
-
-  itemsDOM[winIndex].innerText = "🎁 WIN NFT";
-
-  const offset = -(winIndex * 150 - 120);
-
-  line.style.transform = `translateX(${offset}px)`;
-
-  setTimeout(() => {
-    document.getElementById("win").innerText =
-      "🎉 Выпал NFT подарок!";
+    render();
   }, 4200);
 }
 
-/* WITHDRAW REQUEST */
-async function withdraw() {
-  if (!user) return alert("login first");
+/* ================== WITHDRAW ================== */
+async function withdraw(){
 
-  const item = document.getElementById("item").value;
+  if(inventory.length === 0){
+    alert("Нет предметов");
+    return;
+  }
 
-  if (!item) return alert("Введите предмет");
+  const item = inventory[0];
 
   const res = await fetch(API + "/withdraw", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      telegram_id: user.telegram_id,
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      user_id: uid,
       item: item
     })
   });
 
   const data = await res.json();
 
-  alert("Заявка отправлена: " + data.status);
+  alert("Заявка: " + data.status);
 }
+
+render();
+
 </script>
 
 </body>
