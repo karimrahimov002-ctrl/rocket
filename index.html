@@ -1,251 +1,327 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GiftBattle Style</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Up - Premium TON Cases</title>
+    <script src="https://telegram.org"></script>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: #161c26;
+            --ton-blue: #0088cc;
+            --ton-glow: #00aaff;
+            --text-main: #ffffff;
+            --text-muted: #707e94;
+            --accent-gold: #f3ba2f;
+            --accent-purple: #9b51e0;
+        }
 
-<style>
-body{
-  margin:0;
-  background:#0e0e0e;
-  color:white;
-  font-family:Arial;
-  text-align:center;
-}
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
 
-h1{margin-top:15px;}
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
 
-.panel{
-  background:#1c1c1c;
-  margin:10px;
-  padding:15px;
-  border-radius:12px;
-}
+        /* Шапка */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
+        }
 
-button{
-  padding:12px 18px;
-  margin:5px;
-  border:none;
-  border-radius:10px;
-  background:#4c6fff;
-  color:white;
-  cursor:pointer;
-}
+        .balance-container {
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+        }
 
-button:hover{background:#3b57d1;}
+        .balance-container span {
+            color: var(--ton-glow);
+        }
 
-.case-box{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
+        /* Главный экран / Баннер */
+        .welcome-hero {
+            padding: 24px 16px;
+            text-align: center;
+            background: radial-gradient(circle at center, rgba(0, 136, 204, 0.15) 0%, transparent 70%);
+        }
 
-.case{
-  padding:10px;
-  background:#222;
-  border-radius:10px;
-  cursor:pointer;
-}
-.case:hover{background:#333;}
+        .welcome-hero h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, #fff, var(--ton-glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-.reel{
-  width:95%;
-  margin:20px auto;
-  overflow:hidden;
-  border:2px solid #333;
-  border-radius:12px;
-  height:140px;
-  position:relative;
-}
+        /* Сетка кейсов */
+        .cases-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            padding: 16px;
+        }
 
-.line{
-  display:flex;
-  transition: transform 4s cubic-bezier(.12,.85,.25,1);
-}
+        .case-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
 
-.item{
-  min-width:140px;
-  height:120px;
-  margin:10px;
-  background:#2a2a2a;
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-}
+        .case-card:active {
+            transform: scale(0.98);
+        }
 
-.center{
-  position:absolute;
-  left:50%;
-  top:0;
-  bottom:0;
-  width:2px;
-  background:red;
-  transform:translateX(-50%);
-}
+        /* Стили для разных кейсов */
+        .case-card.bronze { border-left: 4px solid #cd7f32; box-shadow: 0 4px 20px rgba(205, 127, 50, 0.1); }
+        .case-card.silver { border-left: 4px solid #c0c0c0; box-shadow: 0 4px 20px rgba(192, 192, 192, 0.1); }
+        .case-card.gold { border-left: 4px solid var(--accent-gold); box-shadow: 0 4px 20px rgba(243, 186, 47, 0.1); }
+        .case-card.platinum { border-left: 4px solid #e5e4e2; box-shadow: 0 4px 20px rgba(229, 228, 226, 0.1); }
+        .case-card.neon { border-left: 4px solid var(--accent-purple); box-shadow: 0 4px 20px rgba(155, 81, 224, 0.2); }
 
-.inv{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:8px;
-}
+        .case-info h3 {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
 
-.box{
-  background:#2a2a2a;
-  padding:8px;
-  border-radius:8px;
-  font-size:12px;
-}
-</style>
+        .case-price {
+            font-weight: bold;
+            color: var(--ton-glow);
+        }
+
+        /* 3D Имитация Куба (CSS) */
+        .cube-container {
+            width: 50px;
+            height: 50px;
+            perspective: 400px;
+        }
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: rotateCube 6s infinite linear;
+        }
+
+        .face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .bronze .face { background: #cd7f32; }
+        .silver .face { background: #c0c0c0; }
+        .gold .face { background: var(--accent-gold); }
+        .platinum .face { background: #e5e4e2; }
+        .neon .face { background: var(--accent-purple); }
+
+        .front  { transform: translateZ(25px); }
+        .back   { transform: rotateY(180deg) translateZ(25px); }
+        .top    { transform: rotateX(90deg) translateZ(25px); }
+        .bottom { transform: rotateX(-90deg) translateZ(25px); }
+
+        @keyframes rotateCube {
+            0% { transform: rotateX(0deg) rotateY(0deg); }
+            100% { transform: rotateX(360deg) rotateY(360deg); }
+        }
+
+        /* Модальное окно открытия кейса (Рулетка) */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 14, 20, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .roulette-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 350px;
+            height: 120px;
+            background: #1c2431;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+        }
+
+        .pointer {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--ton-glow);
+            z-index: 10;
+            box-shadow: 0 0 10px var(--ton-glow);
+            transform: translateX(-50%);
+        }
+
+        .roulette-tape {
+            display: flex;
+            gap: 10px;
+            padding: 0 20px;
+            transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1);
+            will-change: transform;
+        }
+
+        .roulette-item {
+            width: 90px;
+            height: 90px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            border: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+        }
+
+        .roulette-item.ton-drop { border-color: var(--ton-glow); color: var(--ton-glow); }
+        .roulette-item.nft-drop { border-color: var(--accent-purple); color: var(--accent-purple); }
+        .roulette-item.item-drop { border-color: var(--accent-gold); color: var(--accent-gold); }
+
+        .modal-buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-primary { background: var(--ton-blue); color: #fff; }
+        .btn-secondary { background: var(--card-bg); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); }
+
+        /* Нижнее меню навигации */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 65px;
+            background: #121822;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 90;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--ton-glow);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 2px;
+        }
+
+        /* Скрытые экраны */
+        .screen { display: none; padding: 16px; }
+        .screen.active { display: block; }
+
+        .gift-info-box {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px dashed var(--ton-glow);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .inventory-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .inv-item {
+            background: var(--card-bg);
+            padding: 12px 8px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
 </head>
-
 <body>
 
-<h1>🎁 GiftBattle System</h1>
+    <!-- НАВИГАЦИОННАЯ ШАПКА -->
+    <header>
+        <div style="font-weight: 900; font-size: 18px; tracking-wide">MINI UP</div>
+        <div class="balance-container">
+            <span id="user-balance">50.00</span> TON
+        </div>
+    </header>
 
-<div class="panel">
-💰 Баланс: <span id="bal">10</span>
-</div>
+    <!-- ЭКРАН 1: КЕЙСЫ (ГЛАВНЫЙ) -->
+    <div id="screen-cases" class="screen active">
+        <div class="welcome-hero">
+            <h1>УДАЧА ЖДЕТ ТЕБЯ</h1>
+            <p style="color: var(--text-muted); font-size: 14px;">Открывай кейсы, забирай TON и редкие Telegram NFT Gifts</p>
+        </div>
 
-<div class="panel case-box">
-<div class="case" onclick="setCase('basic')">Basic (5)</div>
-<div class="case" onclick="setCase('epic')">Epic (15)</div>
-<div class="case" onclick="setCase('legend')">Legend (30)</div>
-</div>
-
-<div class="panel">
-<button onclick="spin()">🎰 OPEN CASE</button>
-<button onclick="withdraw()">📤 WITHDRAW</button>
-</div>
-
-<div class="reel">
-<div class="center"></div>
-<div class="line" id="line"></div>
-</div>
-
-<h3 id="result"></h3>
-
-<div class="panel">
-<h3>📦 Inventory</h3>
-<div class="inv" id="inv"></div>
-</div>
-
-<script>
-
-let balance = 10;
-let inventory = [];
-let currentCase = "basic";
-
-const cases = {
-  basic: [
-    {name:"🎁 Gift", value:1},
-    {name:"💎 NFT", value:2},
-    {name:"⭐ Rare", value:3}
-  ],
-  epic: [
-    {name:"💎 Epic NFT", value:5},
-    {name:"🔥 Rare Gift", value:8},
-    {name:"⭐ Premium", value:10}
-  ],
-  legend: [
-    {name:"👑 Legendary Gift", value:15},
-    {name:"💠 TON NFT (mock)", value:25},
-    {name:"🔥 Ultra Rare", value:30}
-  ]
-};
-
-function setCase(c){
-  currentCase = c;
-}
-
-function render(){
-  document.getElementById("bal").innerText = balance;
-
-  const inv = document.getElementById("inv");
-  inv.innerHTML = "";
-
-  inventory.forEach(i=>{
-    const d = document.createElement("div");
-    d.className="box";
-    d.innerText = i.name + " +" + i.value;
-    inv.appendChild(d);
-  });
-}
-
-function buildLine(){
-  const line = document.getElementById("line");
-  line.innerHTML = "";
-
-  const pool = cases[currentCase];
-
-  for(let i=0;i<35;i++){
-    const el = document.createElement("div");
-    el.className="item";
-    el.innerText = pool[Math.floor(Math.random()*pool.length)].name;
-    line.appendChild(el);
-  }
-}
-
-/* ================= SPIN ================= */
-function spin(){
-
-  if(balance <= 0){
-    alert("Нет баланса");
-    return;
-  }
-
-  balance -= 5;
-
-  buildLine();
-
-  const line = document.getElementById("line");
-  const pool = cases[currentCase];
-
-  const winItem = pool[Math.floor(Math.random()*pool.length)];
-
-  const winIndex = Math.floor(Math.random()*20 + 8);
-
-  const items = document.querySelectorAll(".item");
-  items[winIndex].innerText = "🎁 WIN";
-
-  const offset = -(winIndex*150 - 120);
-
-  line.style.transform = `translateX(${offset}px)`;
-
-  setTimeout(()=>{
-
-    inventory.push(winItem);
-    balance += winItem.value;
-
-    document.getElementById("result").innerText =
-      "🎉 Выпало: " + winItem.name;
-
-    render();
-
-  },4000);
-}
-
-/* ================= WITHDRAW ================= */
-function withdraw(){
-
-  if(inventory.length === 0){
-    alert("Нет предметов");
-    return;
-  }
-
-  const item = inventory[0];
-  inventory.shift();
-
-  alert("Заявка на вывод: " + item.name + " отправлена (mock)");
-}
-
-render();
-
-</script>
-
-</body>
-</html>
+        <div class="cases-grid">
+            <!-- Кейс 1 -->
+            <div class="case-card bronze" onclick="openCaseLogic('Bronze Spark', 1)">
+                <div class="case-info">
+                    <h3>Bronze Spark</h3>
