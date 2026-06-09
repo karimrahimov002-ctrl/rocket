@@ -1,333 +1,100 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<title>Risk Gift</title>
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import create_engine, Column, Integer, String, Float
+from sqlalchemy.orm import declarative_base, sessionmaker
+import json
+import random
 
-<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+app = FastAPI()
 
-<style>
-body{
-  margin:0;
-  font-family:Inter,Arial;
-  color:white;
-  background: radial-gradient(circle at 50% 20%,#4c1d95,#020617);
-  overflow:hidden;
-}
+# CORS (Mini App)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-/* ===== STARS ===== */
-canvas{
-  position:fixed;
-  top:0;
-  left:0;
-  z-index:-2;
-}
+# DB
+engine = create_engine("sqlite:///game.db", connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
 
-/* ===== MENU ===== */
-#menu{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(String, unique=True)
+    balance = Column(Float, default=10)
 
-.title{
-  font-size:52px;
-  text-shadow:0 0 30px #a855f7;
-}
+Base.metadata.create_all(bind=engine)
 
-.cards{
-  display:flex;
-  gap:25px;
-  margin-top:30px;
-}
+# CASE DATA
+CASE_PRICE = 5
+REWARDS = [1, 2, 5, 10, 20]
 
-.card{
-  width:170px;
-  height:130px;
-  border-radius:20px;
-  background:linear-gradient(145deg,#1e293b,#0f172a);
-  box-shadow:0 20px 40px rgba(0,0,0,0.7);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-  cursor:pointer;
-  transition:0.2s;
-}
-.card:hover{transform:translateY(-5px);}
-.card:active{transform:scale(0.95);}
+# AUTH (Telegram Mini App)
+@app.post("/auth")
+async def auth(request: Request):
+    data = await request.json()
 
-.soon{opacity:0.6;font-size:12px}
+    tg_user = json.loads(data["user"])
+    tg_id = str(tg_user["id"])
 
-/* ===== GAME ===== */
-#game{
-  display:none;
-  flex-direction:column;
-  height:100vh;
-}
+    db = SessionLocal()
+    user = db.query(User).filter(User.telegram_id == tg_id).first()
 
-.top{
-  display:flex;
-  justify-content:space-between;
-  padding:10px;
-  background:rgba(15,23,42,0.8);
-  backdrop-filter:blur(10px);
-}
+    if not user:
+        user = User(telegram_id=tg_id, balance=10)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
-#mult{
-  text-align:center;
-  font-size:60px;
-  margin-top:10px;
-  text-shadow:0 0 20px #22c55e;
-}
+    return {
+        "telegram_id": user.telegram_id,
+        "balance": user.balance
+    }
 
-#rocket{
-  text-align:center;
-  font-size:70px;
-}
+# CASE INFO
+@app.get("/case")
+def case():
+    return {
+        "price": CASE_PRICE,
+        "rewards": REWARDS
+    }
 
-/* GRAPH */
-#graph{
-  height:200px;
-  margin:10px;
-}
+# OPEN CASE
+@app.post("/open/{telegram_id}")
+def open_case(telegram_id: str):
+    db = SessionLocal()
 
-/* CONTROLS */
-.controls{
-  display:flex;
-  gap:10px;
-  padding:10px;
-}
+    user = db.query(User).filter(User.telegram_id == telegram_id).first()
 
-input{
-  flex:1;
-  padding:12px;
-  border-radius:12px;
-  border:none;
-}
+    if not user:
+        return {"error": "user not found"}
 
-.btn{
-  padding:12px;
-  border-radius:12px;
-  background:linear-gradient(145deg,#7c3aed,#5b21b6);
-  box-shadow:0 8px 0 #3b0764,0 20px 30px rgba(0,0,0,0.6);
-  cursor:pointer;
-}
-.btn:active{
-  transform:translateY(5px);
-}
+    if user.balance < CASE_PRICE:
+        return {"error": "not enough balance"}
 
-/* PLAYERS */
-.players{
-  flex:1;
-  overflow:auto;
-  padding:10px;
-}
+    user.balance -= CASE_PRICE
 
-.player{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:6px;
-}
+    reward = random.choice(REWARDS)
+    user.balance += reward
 
-.avatar{
-  width:28px;
-  height:28px;
-  border-radius:50%;
-}
+    db.commit()
 
-.disabled{
-  opacity:0.5;
-  pointer-events:none;
-}
-</style>
-</head>
+    return {
+        "reward": reward,
+        "balance": user.balance
+    }
 
-<body>
+# BALANCE
+@app.get("/balance/{telegram_id}")
+def balance(telegram_id: str):
+    db = SessionLocal()
 
-<canvas id="stars"></canvas>
+    user = db.query(User).filter(User.telegram_id == telegram_id).first()
 
-<!-- MENU -->
-<div id="menu">
-  <div class="title">Risk Gift</div>
-
-  <div class="cards">
-    <div class="card" onclick="openGame()">🚀 Ракетка</div>
-    <div class="card">📦 Кейсы <div class="soon">Скоро</div></div>
-  </div>
-</div>
-
-<!-- GAME -->
-<div id="game">
-  <div class="top">
-    <div>Баланс: <span id="balance">10</span> TON</div>
-    <div id="wallet">Connect Wallet</div>
-  </div>
-
-  <div id="ton-connect" style="padding:10px;"></div>
-
-  <div id="mult">Ожидание...</div>
-  <canvas id="graph"></canvas>
-  <div id="rocket">🚀</div>
-
-  <div class="controls">
-    <input id="bet" type="number" value="100">
-    <input id="auto" type="number" placeholder="Авто кэшаут (x)">
-    <button class="btn" onclick="placeBet()">Поставить</button>
-    <button class="btn disabled" id="cashBtn" onclick="cash()">Забрать</button>
-  </div>
-
-  <div class="players" id="players"></div>
-</div>
-
-<script>
-
-/* ===== STARS ===== */
-let ctxS=stars.getContext("2d");
-let starArr=[...Array(150)].map(()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight}));
-
-function starLoop(){
-  ctxS.clearRect(0,0,innerWidth,innerHeight);
-  starArr.forEach(s=>{
-    ctxS.fillRect(s.x,s.y,2,2);
-    s.y+=0.4;
-    if(s.y>innerHeight)s.y=0;
-  });
-  requestAnimationFrame(starLoop);
-}
-starLoop();
-
-/* ===== TON ===== */
-const ton=new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl:'https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json',
-  buttonRootId:'ton-connect'
-});
-
-/* ===== NAV ===== */
-function openGame(){
-  menu.style.display="none";
-  game.style.display="flex";
-}
-
-/* ===== GAME ===== */
-let mult=1,time=0,crashPoint=2;
-let waiting=true,waitTime=5;
-let activeBet=false,myBet=0;
-
-/* PLAYERS */
-let animals=["🐶","🐱","🦊","🐸","🐵","🐼","🐧"];
-
-function genPlayers(){
-  players.innerHTML="";
-  for(let i=0;i<20;i++){
-    let div=document.createElement("div");
-    div.className="player";
-    div.innerHTML = "<div class='avatar'>"+animals[Math.random()*animals.length|0]+"</div> Player"+i+" — "+(Math.random()*500|0)+" TON";
-    players.appendChild(div);
-  }
-}
-
-/* GRAPH */
-let g=graph.getContext("2d");
-let pts=[];
-
-function drawGraph(){
-  g.clearRect(0,0,graph.width,graph.height);
-  g.beginPath();
-  g.strokeStyle="#22c55e";
-  pts.forEach((p,i)=>{
-    if(i===0) g.moveTo(p.x,p.y);
-    else g.lineTo(p.x,p.y);
-  });
-  g.stroke();
-}
-
-/* ROUND */
-function startRound(){
-  time=0;
-  mult=1;
-  crashPoint=1+Math.random()*9;
-  waiting=true;
-  waitTime=5;
-  activeBet=false;
-  pts=[];
-  genPlayers();
-}
-
-/* LOOP */
-function loop(){
-  requestAnimationFrame(loop);
-
-  if(waiting){
-    multEl.innerText="Старт через "+waitTime+"с";
-    return;
-  }
-
-  time+=0.016;
-  mult=Math.exp(0.25*time);
-
-  if(mult>=crashPoint){
-    multEl.innerText="💥 "+mult.toFixed(2);
-    activeBet=false;
-    setTimeout(startRound,2000);
-    return;
-  }
-
-  if(activeBet){
-    cashBtn.classList.remove("disabled");
-
-    let autoVal=parseFloat(auto.value);
-    if(autoVal && mult>=autoVal) cash();
-  }
-
-  multEl.innerText=mult.toFixed(2)+"x";
-
-  /* rocket */
-  rocket.style.transform="translateY("+(-Math.pow(mult,1.4)*3)+"px)";
-
-  /* graph */
-  pts.push({x:pts.length*2,y:200-mult*20});
-  drawGraph();
-}
-
-/* TIMER */
-setInterval(()=>{
-  if(waiting){
-    waitTime--;
-    if(waitTime<=0) waiting=false;
-  }
-},1000);
-
-/* BET */
-function placeBet(){
-  if(activeBet) return;
-  let b=+bet.value;
-  if(balance.innerText < b) return;
-
-  balance.innerText -= b;
-  myBet=b;
-  activeBet=true;
-}
-
-/* CASH */
-function cash(){
-  if(!activeBet) return;
-
-  let win=Math.floor(myBet*mult);
-  balance.innerText = +balance.innerText + win;
-
-  activeBet=false;
-}
-
-/* INIT */
-const multEl=document.getElementById("mult");
-startRound();
-loop();
-
-</script>
-
-</body>
-</html>
+    return {"balance": user.balance if user else 0}
+      pip install fastapi uvicorn sqlalchemy
+uvicorn main:app --reload
