@@ -1,197 +1,220 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, Integer, String, Float
-from sqlalchemy.orm import declarative_base, sessionmaker
-import json
-import random
-import hmac
-import hashlib
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>NFT Case App</title>
 
-app = FastAPI()
-
-# ================= CORS =================
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ================= DB =================
-engine = create_engine("sqlite:///game.db", connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
-
-# ================= MODELS =================
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True)
-    telegram_id = Column(String, unique=True)
-    balance = Column(Float, default=10)
-
-class Item(Base):
-    __tablename__ = "items"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer)
-    name = Column(String)
-    rarity = Column(String)
-
-class Withdrawal(Base):
-    __tablename__ = "withdrawals"
-    id = Column(Integer, primary_key=True)
-    telegram_id = Column(String)
-    item = Column(String)
-    status = Column(String, default="pending")
-
-Base.metadata.create_all(bind=engine)
-
-# ================= CASE SYSTEM =================
-CASE_PRICE = 5
-
-CASES = [
-    {"name": "Basic Case", "price": 5},
-    {"name": "Epic Case", "price": 10}
-]
-
-REWARDS = [
-    {"name": "Coin +1", "chance": 70, "reward": 1, "rarity": "common"},
-    {"name": "Coin +5", "chance": 25, "reward": 5, "rarity": "rare"},
-    {"name": "JACKPOT", "chance": 5, "reward": 20, "rarity": "legendary"},
-]
-
-def roll():
-    r = random.randint(1, 100)
-    cur = 0
-    for i in REWARDS:
-        cur += i["chance"]
-        if r <= cur:
-            return i
-    return REWARDS[0]
-
-# ================= TELEGRAM AUTH =================
-BOT_TOKEN = "PUT_BOT_TOKEN_HERE"
-
-def verify(data):
-    try:
-        hash_ = data["hash"]
-        auth = data.copy()
-        auth.pop("hash")
-
-        check = "\n".join(f"{k}={auth[k]}" for k in sorted(auth))
-
-        secret = hashlib.sha256(BOT_TOKEN.encode()).digest()
-        h = hmac.new(secret, check.encode(), hashlib.sha256).hexdigest()
-
-        return h == hash_
-    except:
-        return False
-
-# ================= AUTH =================
-@app.post("/auth")
-async def auth(req: Request):
-    data = await req.json()
-
-    if not verify(data):
-        return {"error": "invalid auth"}
-
-    tg = json.loads(data["user"])
-    tg_id = str(tg["id"])
-
-    db = SessionLocal()
-
-    user = db.query(User).filter(User.telegram_id == tg_id).first()
-
-    if not user:
-        user = User(telegram_id=tg_id, balance=10)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-
-    return {
-        "telegram_id": user.telegram_id,
-        "balance": user.balance
+  <style>
+    body {
+      font-family: Arial;
+      background: #0e0e0e;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
     }
 
-# ================= SHOP =================
-@app.get("/cases")
-def get_cases():
-    return CASES
-
-# ================= OPEN CASE =================
-@app.post("/open/{telegram_id}")
-def open_case(telegram_id: str):
-    db = SessionLocal()
-
-    user = db.query(User).filter(User.telegram_id == telegram_id).first()
-
-    if not user:
-        return {"error": "no user"}
-
-    if user.balance < CASE_PRICE:
-        return {"error": "no balance"}
-
-    user.balance -= CASE_PRICE
-
-    reward = roll()
-
-    user.balance += reward["reward"]
-
-    if reward["rarity"] != "common":
-        item = Item(
-            user_id=user.id,
-            name=reward["name"],
-            rarity=reward["rarity"]
-        )
-        db.add(item)
-
-    db.commit()
-
-    return {
-        "reward": reward,
-        "balance": user.balance
+    .panel {
+      background: #1b1b1b;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
     }
 
-# ================= INVENTORY =================
-@app.get("/inventory/{telegram_id}")
-def inv(telegram_id: str):
-    db = SessionLocal()
+    button {
+      padding: 12px 18px;
+      border: none;
+      border-radius: 10px;
+      background: #4c6fff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 5px;
+    }
 
-    user = db.query(User).filter(User.telegram_id == telegram_id).first()
+    .case-wrapper {
+      overflow: hidden;
+      width: 100%;
+      border-radius: 12px;
+      background: #111;
+      border: 2px solid #333;
+      position: relative;
+      margin-top: 20px;
+    }
 
-    if not user:
-        return []
+    .line {
+      display: flex;
+      width: max-content;
+      transition: transform 4s cubic-bezier(0.12, 0.85, 0.25, 1);
+    }
 
-    items = db.query(Item).filter(Item.user_id == user.id).all()
+    .item {
+      width: 130px;
+      height: 120px;
+      margin: 10px;
+      background: #2a2a2a;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      text-align: center;
+    }
 
-    return [
-        {"name": i.name, "rarity": i.rarity}
-        for i in items
-    ]
+    .center {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 2px;
+      background: red;
+      transform: translateX(-50%);
+    }
 
-# ================= WITHDRAW =================
-@app.post("/withdraw")
-async def withdraw(req: Request):
-    data = await req.json()
+    .win {
+      margin-top: 15px;
+      color: #00ff99;
+      font-size: 18px;
+    }
 
-    db = SessionLocal()
+    input {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 10px;
+      width: 80%;
+    }
+  </style>
+</head>
 
-    w = Withdrawal(
-        telegram_id=data["telegram_id"],
-        item=data["item"],
-        status="pending"
-    )
+<body>
 
-    db.add(w)
-    db.commit()
+<h1>🎁 NFT Case System</h1>
 
-    return {"status": "request sent"}
+<div class="panel">
+  <div id="balance">Баланс: ...</div>
 
-# ================= BALANCE =================
-@app.get("/balance/{telegram_id}")
-def balance(telegram_id: str):
-    db = SessionLocal()
+  <button onclick="login()">Login</button>
+  <button onclick="openCase()">Open NFT Case</button>
+</div>
 
-    user = db.query(User).filter(User.telegram_id == telegram_id).first()
+<div class="case-wrapper">
+  <div class="center"></div>
+  <div class="line" id="line"></div>
+</div>
 
-    return {"balance": user.balance if user else 0}
+<div class="win" id="win"></div>
+
+<div class="panel">
+  <h3>📦 Withdraw NFT</h3>
+  <input id="item" placeholder="Название предмета"/>
+  <button onclick="withdraw()">Send Withdraw Request</button>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+const API = window.location.origin;
+let user = null;
+
+/* NFT items */
+const items = [
+  "🎁 Telegram Gift",
+  "💎 NFT Rare Gift",
+  "⭐ Premium Gift",
+  "🔥 Legendary Gift",
+  "🎉 Common Gift"
+];
+
+function buildLine() {
+  const line = document.getElementById("line");
+  line.innerHTML = "";
+
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement("div");
+    el.className = "item";
+    el.innerText = items[Math.floor(Math.random() * items.length)];
+    line.appendChild(el);
+  }
+}
+
+/* LOGIN */
+async function login() {
+  const res = await fetch(API + "/auth", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(tg.initDataUnsafe)
+  });
+
+  user = await res.json();
+  document.getElementById("balance").innerText =
+    "Баланс: " + user.balance;
+}
+
+/* OPEN CASE */
+async function openCase() {
+  if (!user) return alert("login first");
+
+  document.getElementById("win").innerText = "";
+
+  const res = await fetch(API + "/open/" + user.telegram_id, {
+    method: "POST"
+  });
+
+  const data = await res.json();
+
+  document.getElementById("balance").innerText =
+    "Баланс: " + data.balance;
+
+  animateRoll(data.reward);
+}
+
+/* CS STYLE ROLL */
+function animateRoll(reward) {
+  buildLine();
+
+  const line = document.getElementById("line");
+  const itemsDOM = document.querySelectorAll(".item");
+
+  const winIndex = Math.floor(Math.random() * 20 + 5);
+
+  itemsDOM[winIndex].innerText = "🎁 WIN NFT";
+
+  const offset = -(winIndex * 150 - 120);
+
+  line.style.transform = `translateX(${offset}px)`;
+
+  setTimeout(() => {
+    document.getElementById("win").innerText =
+      "🎉 Выпал NFT подарок!";
+  }, 4200);
+}
+
+/* WITHDRAW REQUEST */
+async function withdraw() {
+  if (!user) return alert("login first");
+
+  const item = document.getElementById("item").value;
+
+  if (!item) return alert("Введите предмет");
+
+  const res = await fetch(API + "/withdraw", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      telegram_id: user.telegram_id,
+      item: item
+    })
+  });
+
+  const data = await res.json();
+
+  alert("Заявка отправлена: " + data.status);
+}
+</script>
+
+</body>
+</html>
