@@ -4,10 +4,12 @@ from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import declarative_base, sessionmaker
 import json
 import random
+import hmac
+import hashlib
 
 app = FastAPI()
 
-# CORS (Mini App)
+# ================= CORS =================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,32 +18,88 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# DB
+# ================= DB =================
 engine = create_engine("sqlite:///game.db", connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
+# ================= MODELS =================
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     telegram_id = Column(String, unique=True)
     balance = Column(Float, default=10)
 
+class Item(Base):
+    __tablename__ = "items"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer)
+    name = Column(String)
+    rarity = Column(String)
+
+class Withdrawal(Base):
+    __tablename__ = "withdrawals"
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(String)
+    item = Column(String)
+    status = Column(String, default="pending")
+
 Base.metadata.create_all(bind=engine)
 
-# CASE DATA
+# ================= CASE SYSTEM =================
 CASE_PRICE = 5
-REWARDS = [1, 2, 5, 10, 20]
 
-# AUTH (Telegram Mini App)
+CASES = [
+    {"name": "Basic Case", "price": 5},
+    {"name": "Epic Case", "price": 10}
+]
+
+REWARDS = [
+    {"name": "Coin +1", "chance": 70, "reward": 1, "rarity": "common"},
+    {"name": "Coin +5", "chance": 25, "reward": 5, "rarity": "rare"},
+    {"name": "JACKPOT", "chance": 5, "reward": 20, "rarity": "legendary"},
+]
+
+def roll():
+    r = random.randint(1, 100)
+    cur = 0
+    for i in REWARDS:
+        cur += i["chance"]
+        if r <= cur:
+            return i
+    return REWARDS[0]
+
+# ================= TELEGRAM AUTH =================
+BOT_TOKEN = "PUT_BOT_TOKEN_HERE"
+
+def verify(data):
+    try:
+        hash_ = data["hash"]
+        auth = data.copy()
+        auth.pop("hash")
+
+        check = "\n".join(f"{k}={auth[k]}" for k in sorted(auth))
+
+        secret = hashlib.sha256(BOT_TOKEN.encode()).digest()
+        h = hmac.new(secret, check.encode(), hashlib.sha256).hexdigest()
+
+        return h == hash_
+    except:
+        return False
+
+# ================= AUTH =================
 @app.post("/auth")
-async def auth(request: Request):
-    data = await request.json()
+async def auth(req: Request):
+    data = await req.json()
 
-    tg_user = json.loads(data["user"])
-    tg_id = str(tg_user["id"])
+    if not verify(data):
+        return {"error": "invalid auth"}
+
+    tg = json.loads(data["user"])
+    tg_id = str(tg["id"])
 
     db = SessionLocal()
+
     user = db.query(User).filter(User.telegram_id == tg_id).first()
 
     if not user:
@@ -55,15 +113,12 @@ async def auth(request: Request):
         "balance": user.balance
     }
 
-# CASE INFO
-@app.get("/case")
-def case():
-    return {
-        "price": CASE_PRICE,
-        "rewards": REWARDS
-    }
+# ================= SHOP =================
+@app.get("/cases")
+def get_cases():
+    return CASES
 
-# OPEN CASE
+# ================= OPEN CASE =================
 @app.post("/open/{telegram_id}")
 def open_case(telegram_id: str):
     db = SessionLocal()
@@ -71,15 +126,24 @@ def open_case(telegram_id: str):
     user = db.query(User).filter(User.telegram_id == telegram_id).first()
 
     if not user:
-        return {"error": "user not found"}
+        return {"error": "no user"}
 
     if user.balance < CASE_PRICE:
-        return {"error": "not enough balance"}
+        return {"error": "no balance"}
 
     user.balance -= CASE_PRICE
 
-    reward = random.choice(REWARDS)
-    user.balance += reward
+    reward = roll()
+
+    user.balance += reward["reward"]
+
+    if reward["rarity"] != "common":
+        item = Item(
+            user_id=user.id,
+            name=reward["name"],
+            rarity=reward["rarity"]
+        )
+        db.add(item)
 
     db.commit()
 
@@ -88,7 +152,42 @@ def open_case(telegram_id: str):
         "balance": user.balance
     }
 
-# BALANCE
+# ================= INVENTORY =================
+@app.get("/inventory/{telegram_id}")
+def inv(telegram_id: str):
+    db = SessionLocal()
+
+    user = db.query(User).filter(User.telegram_id == telegram_id).first()
+
+    if not user:
+        return []
+
+    items = db.query(Item).filter(Item.user_id == user.id).all()
+
+    return [
+        {"name": i.name, "rarity": i.rarity}
+        for i in items
+    ]
+
+# ================= WITHDRAW =================
+@app.post("/withdraw")
+async def withdraw(req: Request):
+    data = await req.json()
+
+    db = SessionLocal()
+
+    w = Withdrawal(
+        telegram_id=data["telegram_id"],
+        item=data["item"],
+        status="pending"
+    )
+
+    db.add(w)
+    db.commit()
+
+    return {"status": "request sent"}
+
+# ================= BALANCE =================
 @app.get("/balance/{telegram_id}")
 def balance(telegram_id: str):
     db = SessionLocal()
@@ -96,5 +195,3 @@ def balance(telegram_id: str):
     user = db.query(User).filter(User.telegram_id == telegram_id).first()
 
     return {"balance": user.balance if user else 0}
-      pip install fastapi uvicorn sqlalchemy
-uvicorn main:app --reload
