@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Riskgift — кейсы до 50 TON | Админ @kerixu</title>
+    <title>Riskgift — кейсы до 25 TON | Секретная админка</title>
     <style>
         * {
             margin: 0;
@@ -59,6 +59,33 @@
             border-radius: 40px;
             cursor: pointer;
             transition: 0.2s;
+        }
+        /* Табы */
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(0,255,255,0.3);
+            padding-bottom: 8px;
+        }
+        .tab-btn {
+            background: transparent;
+            color: #ccc;
+            font-size: 1rem;
+            padding: 8px 20px;
+            border-radius: 40px;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: rgba(0,255,255,0.2);
+            color: cyan;
+            box-shadow: 0 0 8px cyan;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
         }
         /* Кейсы 2 ряда */
         .cases-grid {
@@ -152,13 +179,13 @@
             white-space: nowrap;
             font-size: 0.8rem;
         }
-        .inventory-list, .withdraw-list, .deposit-gift-list, .admin-requests-list {
+        .inventory-list, .withdraw-list, .deposit-gift-list, .admin-requests-list, .history-list {
             max-height: 360px;
             overflow-y: auto;
             margin: 12px 0;
             padding-right: 4px;
         }
-        .gift-card {
+        .gift-card, .history-item {
             background: linear-gradient(135deg, #0f1422, #0a0e1a);
             border-radius: 24px;
             padding: 10px;
@@ -203,28 +230,49 @@
             border-radius: 30px;
             padding: 2px 12px;
             font-size: 0.7rem;
-            margin-left: 10px;
+        }
+        .code-input {
+            background: #1a1f2e;
+            border: 1px solid cyan;
+            border-radius: 60px;
+            padding: 10px 16px;
+            color: white;
+            text-align: center;
+            font-size: 1rem;
+            margin: 12px 0;
+            width: 80%;
         }
     </style>
 </head>
 <body>
 
-<!-- ОСНОВНОЙ ЭКРАН (без ввода юзернейма, сразу с админкой для @kerixu) -->
+<!-- ОСНОВНОЙ ЭКРАН -->
 <div id="mainScreen">
     <div class="top-bar">
         <div class="balance-box">💰 <span id="userBalance">0.00</span> TON</div>
         <div>
             <button id="openInventoryBtn" class="icon-btn" style="margin-right: 6px;">🎁</button>
             <button id="openWithdrawBtn" class="icon-btn">💸</button>
-            <button id="adminPanelBtn" class="icon-btn" style="margin-left: 6px; background:#4a2a2a;">⚙️</button>
+            <button id="adminAccessBtn" class="icon-btn" style="margin-left: 6px; background:#2a2a4a;">🔐</button>
         </div>
     </div>
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-        <h2>⚡ КЕЙСЫ (до 50 TON)</h2>
+        <h2>⚡ КЕЙСЫ (до 25 TON)</h2>
         <button id="goToBankBtn" style="background: #2a2e4a; font-size: 0.7rem;">🏦 Банк подарков</button>
     </div>
-    <p style="font-size: 0.7rem; margin-bottom: 12px;">70% TON / 20% Редкий / 10% NFT | Пополнение через отправку подарка (одобряет админ @kerixu)</p>
-    <div class="cases-grid" id="casesContainer"></div>
+    <!-- Табы: Кейсы / История выигрышей -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="cases">📦 КЕЙСЫ</button>
+        <button class="tab-btn" data-tab="history">🏆 ИСТОРИЯ ВЫИГРЫШЕЙ</button>
+    </div>
+    <div id="tabCases" class="tab-content active">
+        <p style="font-size: 0.7rem; margin-bottom: 12px;">70% TON / 20% Редкий / 10% NFT | Пополнение через отправку подарка (одобряет админ)</p>
+        <div class="cases-grid" id="casesContainer"></div>
+    </div>
+    <div id="tabHistory" class="tab-content">
+        <p style="font-size: 0.7rem; margin-bottom: 12px;">Ваши последние 20 выигрышей</p>
+        <div id="historyList" class="history-list" style="max-height: 400px;"></div>
+    </div>
 </div>
 
 <!-- РУЛЕТКА -->
@@ -259,47 +307,58 @@
     </div>
 </div>
 
-<!-- АДМИН-ПАНЕЛЬ (только для @kerixu) -->
+<!-- АДМИН-ПАНЕЛЬ (доступ по секретному коду) -->
 <div id="adminModal" class="modal">
     <div class="modal-content" style="max-width: 550px;">
-        <h3>🔧 АДМИН-ПАНЕЛЬ <span style="font-size:0.7rem;">(@kerixu)</span></h3>
-        <div style="background:#00000066; border-radius: 24px; padding: 12px; margin: 12px 0;">
-            <h4>📋 ЗАЯВКИ НА ПОПОЛНЕНИЕ (из банка)</h4>
-            <div id="adminRequestsList" class="admin-requests-list" style="max-height: 250px;"></div>
-            <hr>
-            <h4>➕ Ручное начисление TON</h4>
-            <input type="text" id="adminTargetUser" placeholder="Username получателя" style="background:#1a1f2e; border:1px solid cyan; border-radius: 40px; padding: 6px 12px; color:white; width: 60%; margin-right: 6px;">
-            <input type="number" id="adminAmount" placeholder="TON" step="0.1" style="background:#1a1f2e; border:1px solid cyan; border-radius: 40px; padding: 6px 12px; color:white; width: 30%;">
-            <button id="manualCreditBtn" style="margin-top: 8px;">💸 Начислить</button>
+        <h3>🔧 АДМИН-ПАНЕЛЬ</h3>
+        <div id="adminPanelContent">
+            <!-- сюда загрузится содержимое после успешного ввода кода -->
         </div>
         <button id="closeAdminBtn" class="close-btn">Закрыть</button>
     </div>
 </div>
 
-<!-- МОДАЛКА ОТПРАВКИ В БАНК (создание заявки) -->
+<!-- МОДАЛКА ВВОДА КОДА -->
+<div id="codeModal" class="modal">
+    <div class="modal-content">
+        <h3>🔐 ДОСТУП АДМИНИСТРАТОРА</h3>
+        <p>Введите секретный код для входа в панель управления</p>
+        <input type="password" id="adminCodeInput" class="code-input" placeholder="******">
+        <div class="flex-btns">
+            <button id="submitCodeBtn">Войти</button>
+            <button id="closeCodeModalBtn" class="close-btn">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛКА ОТПРАВКИ В БАНК -->
 <div id="depositGiftModal" class="modal">
     <div class="modal-content">
         <h3>🎁 ОТПРАВИТЬ ПОДАРОК В БАНК</h3>
-        <p>Выберите подарок. Администратор <strong>@kerixu</strong> вручную одобрит заявку и начислит TON (2.5–4 TON).</p>
+        <p>Выберите подарок. Администратор одобрит заявку и начислит TON (2.5–4 TON).</p>
         <div id="userGiftsForDeposit" class="deposit-gift-list"></div>
         <button id="closeDepositModal" class="close-btn">Отмена</button>
     </div>
 </div>
 
 <script>
-    // ------------------ КЕЙСЫ ТОЛЬКО ДО 50 TON (включительно) ------------------
+    // ========== КОНФИГУРАЦИЯ ==========
+    // Секретный код для админки (сложный)
+    const ADMIN_SECRET_CODE = "RiskGiftAdmin2025";
+
+    // Кейсы только до 25 TON (8 штук)
     const CASES = [
         { id:0, name:"Trash Case", price:0.1, icon:"🗑️", drops:["0.01-0.05 TON","Обычный подарок"] },
-        { id:1, name:"Starter Pack", price:1, icon:"📦", drops:["0.1-0.5 TON","Редкий подарок"] },
+        { id:1, name:"Starter Pack", price:1, icon:"📦", drops:["0.1-0.5 TON","Редкий"] },
         { id:2, name:"Crypto Vortex", price:5, icon:"🌀", drops:["0.5-2.5 TON","Редкий"] },
         { id:15, name:"Neon Rush", price:5, icon:"⚡", drops:["0.6-2.8 TON","Xmas Stocking"] },
         { id:3, name:"Hype Blaze", price:10, icon:"🔥", drops:["1-5 TON","Редкий x2"] },
         { id:16, name:"Phantom Core", price:10, icon:"👻", drops:["1.2-6 TON","Lol Pop"] },
         { id:4, name:"Magnate", price:25, icon:"👑", drops:["2.5-12 TON","Редкий x3"] },
-        { id:5, name:"NFT Empire", price:50, icon:"🏛️", drops:["5-25 TON","NFT 12%"] }
+        { id:17, name:"Golden Era", price:25, icon:"🏆", drops:["3-13 TON","Гарант NFT 15%"] }
     ];
 
-    // Редкие подарки (9 видов)
+    // Редкие подарки (расширенный список, больше призов)
     const RARE_GIFTS = [
         { id:"xmas", name:"Xmas Stocking", icon:"🧦", rarity:"rare", valueTon:0.5 },
         { id:"clover", name:"Clover Pin", icon:"🍀", rarity:"rare", valueTon:0.4 },
@@ -309,10 +368,12 @@
         { id:"ice", name:"Ice Cream", icon:"🍦", rarity:"common", valueTon:0.55 },
         { id:"snoop", name:"Snoop Dogg", icon:"🐶", rarity:"legendary", valueTon:0.8 },
         { id:"golden", name:"Golden Ticket", icon:"🎫", rarity:"epic", valueTon:1.2 },
-        { id:"dragon", name:"Dragon Scale", icon:"🐉", rarity:"legendary", valueTon:2.0 }
+        { id:"dragon", name:"Dragon Scale", icon:"🐉", rarity:"legendary", valueTon:2.0 },
+        { id:"phoenix", name:"Phoenix Feather", icon:"🔥", rarity:"legendary", valueTon:2.5 },
+        { id:"crystal", name:"Crystal Heart", icon:"💎", rarity:"epic", valueTon:1.8 }
     ];
 
-    // NFT (8 видов с ценами)
+    // NFT с высокими ценами (до 20 TON)
     const NFT_GIFTS = [
         { name:"Mad Pumpkin", valueTon:9.2, icon:"🎃" },
         { name:"Eternal Rose", valueTon:17.3, icon:"🌹" },
@@ -321,41 +382,16 @@
         { name:"Kissed Frog", valueTon:36.0, icon:"🐸" },
         { name:"⭐ NFT Star", valueTon:5.0, icon:"⭐" },
         { name:"🔴 Red Diamond", valueTon:8.5, icon:"💎" },
-        { name:"💠 Neon Vortex", valueTon:12.0, icon:"🌀" }
+        { name:"💠 Neon Vortex", valueTon:12.0, icon:"🌀" },
+        { name:"👾 Alien Artifact", valueTon:19.5, icon:"👾" },
+        { name:"🌙 Lunar Token", valueTon:22.0, icon:"🌙" }
     ];
 
-    // ------------------ ГЛОБАЛЬНЫЕ ДАННЫЕ ------------------
-    let allUsersData = {};      // { "username": { tonBalance, inventory: { giftId: count, nft: [] } } }
-    let depositRequests = [];   // заявки на пополнение
+    // Глобальные данные
+    let allUsersData = {};
+    let depositRequests = [];
     let currentUser = null;
-
-    // Определяем текущего пользователя через Telegram WebApp или localStorage
-    function initCurrentUser() {
-        // Пытаемся получить из Telegram
-        let tgUser = null;
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-            tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-        }
-        if (tgUser && tgUser.username) {
-            currentUser = tgUser.username.toLowerCase();
-        } else {
-            // Запасной вариант: используем сохранённого или генерируем временного
-            let saved = localStorage.getItem('riskgift_temp_user');
-            if (saved) currentUser = saved;
-            else {
-                currentUser = 'user_' + Math.floor(Math.random() * 100000);
-                localStorage.setItem('riskgift_temp_user', currentUser);
-            }
-        }
-        // Если админ @kerixu — оставляем как есть
-        if (currentUser !== 'kerixu' && currentUser !== '@kerixu') {
-            // ничего не меняем
-        }
-        if (!allUsersData[currentUser]) {
-            allUsersData[currentUser] = { tonBalance: 15.0, inventory: initInventoryObj() };
-        }
-        saveAllData();
-    }
+    let userHistory = []; // история выигрышей текущего пользователя
 
     function initInventoryObj() {
         let inv = {};
@@ -365,7 +401,7 @@
     }
 
     function loadAllData() {
-        const saved = localStorage.getItem('riskgift_allusers_v8');
+        const saved = localStorage.getItem('riskgift_allusers_v9');
         if (saved) {
             try {
                 const data = JSON.parse(saved);
@@ -373,17 +409,46 @@
                 depositRequests = data.requests || [];
             } catch(e) {}
         }
-        if (!allUsersData['kerixu']) {
-            allUsersData['kerixu'] = { tonBalance: 100, inventory: initInventoryObj() };
+        if (!allUsersData['default_user']) {
+            allUsersData['default_user'] = { tonBalance: 20.0, inventory: initInventoryObj() };
         }
     }
     function saveAllData() {
-        localStorage.setItem('riskgift_allusers_v8', JSON.stringify({ allUsers: allUsersData, requests: depositRequests }));
+        localStorage.setItem('riskgift_allusers_v9', JSON.stringify({ allUsers: allUsersData, requests: depositRequests }));
+    }
+
+    // Определяем пользователя (Telegram или временный)
+    function initCurrentUser() {
+        let tgUser = null;
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+            tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        }
+        if (tgUser && tgUser.username) {
+            currentUser = tgUser.username.toLowerCase();
+        } else {
+            let saved = localStorage.getItem('riskgift_temp_user');
+            if (saved) currentUser = saved;
+            else {
+                currentUser = 'user_' + Math.floor(Math.random() * 100000);
+                localStorage.setItem('riskgift_temp_user', currentUser);
+            }
+        }
+        if (!allUsersData[currentUser]) {
+            allUsersData[currentUser] = { tonBalance: 15.0, inventory: initInventoryObj() };
+        }
+        // Загружаем историю для этого пользователя
+        if (allUsersData[currentUser].history) {
+            userHistory = allUsersData[currentUser].history;
+        } else {
+            userHistory = [];
+            allUsersData[currentUser].history = userHistory;
+        }
+        saveAllData();
     }
 
     function getUserData(username) {
         if (!allUsersData[username]) {
-            allUsersData[username] = { tonBalance: 10.0, inventory: initInventoryObj() };
+            allUsersData[username] = { tonBalance: 10.0, inventory: initInventoryObj(), history: [] };
             saveAllData();
         }
         return allUsersData[username];
@@ -394,6 +459,30 @@
             const data = getUserData(currentUser);
             document.getElementById('userBalance').innerText = data.tonBalance.toFixed(4);
         }
+    }
+
+    function addHistoryEntry(entry) {
+        userHistory.unshift(entry);
+        if (userHistory.length > 20) userHistory.pop();
+        if (allUsersData[currentUser]) allUsersData[currentUser].history = userHistory;
+        saveAllData();
+        renderHistory();
+    }
+
+    function renderHistory() {
+        const container = document.getElementById('historyList');
+        if (!container) return;
+        container.innerHTML = '';
+        if (userHistory.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px;">Пока нет выигрышей. Откройте кейс!</div>';
+            return;
+        }
+        userHistory.forEach(entry => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `<div>${entry}</div>`;
+            container.appendChild(div);
+        });
     }
 
     // Добавление выигрыша
@@ -414,7 +503,7 @@
         if (username === currentUser) updateBalanceUI();
     }
 
-    // Генерация выигрыша (математика 70/20/10)
+    // Генерация выигрыша
     function generateReward(casePrice) {
         const rand = Math.random();
         if (rand < 0.7) {
@@ -433,7 +522,7 @@
         }
     }
 
-    // Рулетка с анимацией
+    // Рулетка
     function showRoulette(casePrice, onComplete) {
         const rouletteTrack = document.getElementById('rouletteTrack');
         const resultMsg = document.getElementById('rouletteResultMsg');
@@ -463,17 +552,22 @@
         const finishHandler = () => {
             rouletteTrack.removeEventListener('transitionend', finishHandler);
             let rewardText = '';
+            let historyEntry = '';
             if (reward.type === 'ton') {
                 addTonToUser(currentUser, reward.value);
                 rewardText = `💰 +${reward.value} TON`;
+                historyEntry = `🎲 Кейс за ${casePrice} TON → Выигрыш: ${reward.value} TON`;
             } else if (reward.type === 'rare_gift') {
                 addRareGiftToUser(currentUser, reward.giftId);
                 rewardText = `🎁 ${reward.displayName} добавлен в инвентарь!`;
+                historyEntry = `🎲 Кейс за ${casePrice} TON → Подарок: ${reward.displayName}`;
             } else {
                 addNftToUser(currentUser, reward.nftData);
                 rewardText = `💎 NFT: ${reward.displayName}`;
+                historyEntry = `🎲 Кейс за ${casePrice} TON → NFT: ${reward.displayName}`;
             }
             resultMsg.innerHTML = rewardText;
+            addHistoryEntry(historyEntry);
             if (onComplete) onComplete();
             updateBalanceUI();
         };
@@ -500,7 +594,7 @@
                 <div class="case-3d-icon">${c.icon}</div>
                 <div class="case-title">${c.name}</div>
                 <div class="case-price">${c.price} TON</div>
-                <div class="case-drops" onclick="alert('${c.name}\\nВозможные выигрыши:\\n${c.drops.join('\\n')}\\n\\n70% TON\\n20% редкий подарок\\n10% NFT')">📋 Дропы</div>
+                <div class="case-drops" onclick="alert('${c.name}\\nВозможные выигрыши:\\n${c.drops.join('\\n')}\\n\\n70% TON\\n20% редкий подарок (11 видов)\\n10% NFT (10 видов)')">📋 Дропы</div>
                 <button class="btn-open" data-id="${c.id}">ОТКРЫТЬ</button>
             `;
             container.appendChild(div);
@@ -555,7 +649,7 @@
         document.querySelectorAll('.withdrawRareBtn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const giftId = btn.getAttribute('data-gift-id');
-                if (user.inventory[giftId] > 0) { user.inventory[giftId]--; saveAllData(); refreshInventoryModal(); refreshWithdrawGifts(); alert(`✅ ${giftId} отправлен в Telegram!`); }
+                if (user.inventory[giftId] > 0) { user.inventory[giftId]--; saveAllData(); refreshInventoryModal(); refreshWithdrawGifts(); alert(`✅ Подарок отправлен в Telegram!`); }
             });
         });
         document.querySelectorAll('.withdrawNftBtn').forEach(btn => {
@@ -577,7 +671,7 @@
             status: 'pending'
         });
         saveAllData();
-        alert(`Заявка на отправку "${giftName}" создана. Администратор @kerixu рассмотрит её в ближайшее время.`);
+        alert(`Заявка на отправку "${giftName}" создана. Администратор рассмотрит её.`);
     }
 
     function openDepositModal() {
@@ -615,7 +709,7 @@
                 const idx = parseInt(btn.getAttribute('data-idx'));
                 const nftName = btn.getAttribute('data-name');
                 if (user.inventory.nft[idx]) {
-                    const removed = user.inventory.nft.splice(idx,1)[0];
+                    user.inventory.nft.splice(idx,1);
                     saveAllData();
                     createDepositRequest(null, nftName, 'nft');
                     refreshInventoryModal();
@@ -626,48 +720,75 @@
         document.getElementById('depositGiftModal').classList.add('active');
     }
 
-    // Админ-панель
+    // Админ-панель (рендер после успешного ввода кода)
     function renderAdminPanel() {
-        if (currentUser !== 'kerixu') return;
+        const container = document.getElementById('adminPanelContent');
+        container.innerHTML = `
+            <div style="background:#00000066; border-radius: 24px; padding: 12px; margin: 12px 0;">
+                <h4>📋 ЗАЯВКИ НА ПОПОЛНЕНИЕ</h4>
+                <div id="adminRequestsList" class="admin-requests-list" style="max-height: 250px;"></div>
+                <hr>
+                <h4>➕ Ручное начисление TON</h4>
+                <input type="text" id="adminTargetUser" placeholder="Username получателя" style="background:#1a1f2e; border:1px solid cyan; border-radius: 40px; padding: 6px 12px; color:white; width: 60%; margin-right: 6px;">
+                <input type="number" id="adminAmount" placeholder="TON" step="0.1" style="background:#1a1f2e; border:1px solid cyan; border-radius: 40px; padding: 6px 12px; color:white; width: 30%;">
+                <button id="manualCreditBtn" style="margin-top: 8px;">💸 Начислить</button>
+            </div>
+        `;
         const requestsDiv = document.getElementById('adminRequestsList');
-        requestsDiv.innerHTML = '';
-        if (depositRequests.length === 0) { requestsDiv.innerHTML = '<div>Нет активных заявок</div>'; return; }
-        depositRequests.forEach((req, idx) => {
-            requestsDiv.innerHTML += `
-                <div class="gift-card" style="flex-direction:column; align-items:stretch;">
-                    <div><strong>👤 ${req.fromUser}</strong> | 🎁 ${req.giftName}</div>
-                    <div>Тип: ${req.giftType === 'rare' ? 'Редкий подарок' : 'NFT'}</div>
-                    <button class="approveReqBtn" data-idx="${idx}">✅ Одобрить и начислить TON (2.5-4)</button>
-                </div>
-            `;
-        });
-        document.querySelectorAll('.approveReqBtn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.getAttribute('data-idx'));
-                const req = depositRequests[idx];
-                if (req) {
-                    const amount = Math.random() * 1.5 + 2.5;
-                    const rounded = Math.round(amount * 100) / 100;
-                    addTonToUser(req.fromUser, rounded);
-                    depositRequests.splice(idx, 1);
-                    saveAllData();
-                    alert(`✅ Начислено ${rounded} TON пользователю ${req.fromUser}`);
-                    renderAdminPanel();
-                }
+        function refreshRequests() {
+            requestsDiv.innerHTML = '';
+            if (depositRequests.length === 0) { requestsDiv.innerHTML = '<div>Нет активных заявок</div>'; return; }
+            depositRequests.forEach((req, idx) => {
+                requestsDiv.innerHTML += `
+                    <div class="gift-card" style="flex-direction:column; align-items:stretch;">
+                        <div><strong>👤 ${req.fromUser}</strong> | 🎁 ${req.giftName}</div>
+                        <div>Тип: ${req.giftType === 'rare' ? 'Редкий подарок' : 'NFT'}</div>
+                        <button class="approveReqBtn" data-idx="${idx}">✅ Одобрить и начислить TON (2.5-4)</button>
+                    </div>
+                `;
             });
-        });
+            document.querySelectorAll('.approveReqBtn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.getAttribute('data-idx'));
+                    const req = depositRequests[idx];
+                    if (req) {
+                        const amount = Math.random() * 1.5 + 2.5;
+                        const rounded = Math.round(amount * 100) / 100;
+                        addTonToUser(req.fromUser, rounded);
+                        depositRequests.splice(idx, 1);
+                        saveAllData();
+                        alert(`✅ Начислено ${rounded} TON пользователю ${req.fromUser}`);
+                        refreshRequests();
+                    }
+                });
+            });
+        }
+        refreshRequests();
+        document.getElementById('manualCreditBtn').onclick = () => {
+            const target = document.getElementById('adminTargetUser').value.trim();
+            const amount = parseFloat(document.getElementById('adminAmount').value);
+            if (!target || isNaN(amount) || amount <= 0) { alert('Введите корректные данные'); return; }
+            addTonToUser(target, amount);
+            alert(`Начислено ${amount} TON пользователю ${target}`);
+            document.getElementById('adminTargetUser').value = '';
+            document.getElementById('adminAmount').value = '';
+            if (target === currentUser) updateBalanceUI();
+        };
     }
 
-    function manualCredit() {
-        if (currentUser !== 'kerixu') return;
-        const target = document.getElementById('adminTargetUser').value.trim();
-        const amount = parseFloat(document.getElementById('adminAmount').value);
-        if (!target || isNaN(amount) || amount <= 0) { alert('Введите корректные данные'); return; }
-        addTonToUser(target, amount);
-        alert(`Начислено ${amount} TON пользователю ${target}`);
-        document.getElementById('adminTargetUser').value = '';
-        document.getElementById('adminAmount').value = '';
-        if (target === currentUser) updateBalanceUI();
+    // Табы
+    function initTabs() {
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                document.getElementById(`tab${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`).classList.add('active');
+                tabs.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (tabId === 'history') renderHistory();
+            });
+        });
     }
 
     // Инициализация
@@ -676,6 +797,8 @@
         initCurrentUser();
         renderCases();
         updateBalanceUI();
+        initTabs();
+        renderHistory();
 
         document.getElementById('openInventoryBtn').onclick = () => { refreshInventoryModal(); document.getElementById('inventoryModal').classList.add('active'); };
         document.getElementById('closeInventoryBtn').onclick = () => document.getElementById('inventoryModal').classList.remove('active');
@@ -686,25 +809,37 @@
         document.getElementById('closeRouletteBtn').onclick = () => document.getElementById('rouletteModal').classList.remove('active');
         document.getElementById('goToBankBtn').onclick = () => window.open('https://t.me/riskgift_bank', '_blank');
         document.getElementById('bankProfileFromInvBtn').onclick = () => window.open('https://t.me/riskgift_bank', '_blank');
-        const adminBtn = document.getElementById('adminPanelBtn');
-        adminBtn.onclick = () => {
-            if (currentUser === 'kerixu') { renderAdminPanel(); document.getElementById('adminModal').classList.add('active'); }
-            else alert('Админ-панель доступна только @kerixu');
+        
+        // Админка по коду
+        const adminAccessBtn = document.getElementById('adminAccessBtn');
+        const codeModal = document.getElementById('codeModal');
+        const adminModal = document.getElementById('adminModal');
+        adminAccessBtn.onclick = () => codeModal.classList.add('active');
+        document.getElementById('closeCodeModalBtn').onclick = () => codeModal.classList.remove('active');
+        document.getElementById('submitCodeBtn').onclick = () => {
+            const code = document.getElementById('adminCodeInput').value;
+            if (code === ADMIN_SECRET_CODE) {
+                codeModal.classList.remove('active');
+                renderAdminPanel();
+                adminModal.classList.add('active');
+                document.getElementById('adminCodeInput').value = '';
+            } else {
+                alert('Неверный код доступа');
+            }
         };
-        document.getElementById('closeAdminBtn').onclick = () => document.getElementById('adminModal').classList.remove('active');
-        document.getElementById('manualCreditBtn').onclick = () => manualCredit();
+        document.getElementById('closeAdminBtn').onclick = () => adminModal.classList.remove('active');
     }
-
     init();
 </script>
 
 <div style="margin-top: 30px; background: #03060cee; border-radius: 28px; padding: 14px; font-size: 0.65rem; border: 1px solid #0ff3;">
-    <h3 style="color: cyan;">✅ Riskgift — упрощённая версия для @kerixu</h3>
-    <p>🔹 Кейсы только до 50 TON (8 штук), расположены в 2 ряда.<br>
-    🔹 Админ @kerixu имеет кнопку ⚙️, где видит заявки от пользователей на пополнение через отправку подарка в банк.<br>
-    🔹 При отправке подарка создаётся заявка, админ вручную одобряет и начисляет 2.5–4 TON.<br>
-    🔹 Открывание кейсов — честная рулетка с шансами 70/20/10.<br>
-    🔹 Telegram WebApp автоматически определяет username, если он есть (иначе временный ID).</p>
+    <h3 style="color: cyan;">✅ Riskgift — финальная версия с секретной админкой</h3>
+    <p>🔹 Кейсы только до 25 TON (8 штук), 2 ряда.<br>
+    🔹 Расширенный список призов: 11 редких подарков + 10 NFT с ценами до 36 TON.<br>
+    🔹 Отдельная вкладка "История выигрышей" с последними 20 результатами.<br>
+    🔹 Админ-панель доступна по секретному коду: <strong>RiskGiftAdmin2025</strong> (нажмите на замок 🔐).<br>
+    🔹 В админке: просмотр заявок от пользователей, одобрение пополнений, ручное начисление TON.<br>
+    🔹 Все данные сохраняются в localStorage, поддерживается мультипользовательский режим.</p>
 </div>
 </body>
 </html>
