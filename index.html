@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Riskgift — точные цены, честные шансы, 1 предмет за раз</title>
+    <title>Riskgift — точные цены, честные шансы </title>
     <style>
         * {
             margin: 0;
@@ -306,11 +306,11 @@
         </div>
     </div>
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-        <h2>⚡ КЕЙСЫ (до 25 TON)</h2>
+        <h2>⚡ КЕЙСЫ </h2>
         <button id="goToBankBtn" style="background: #2a2e4a; font-size: 0.7rem;">🏦 Банк подарков</button>
     </div>
     
-    <button id="inventoryMainBtn" class="inventory-btn">📦 МОЙ ИНВЕНТАРЬ (подарки и NFT)</button>
+    <button id="inventoryMainBtn" class="inventory-btn">📦 ИНВЕНТАРЬ </button>
     
     <div class="cases-grid" id="casesContainer"></div>
 </div>
@@ -318,7 +318,7 @@
 <!-- МОДАЛКА CS2-БАРАБАНА -->
 <div id="slotModal" class="modal">
     <div class="modal-content">
-        <h3>🎰 ВРАЩЕНИЕ БАРАБАНА (CS2 style)</h3>
+        <h3>🎰 ВРАЩЕНИЕ БАРАБАНА </h3>
         <div class="slot-machine">
             <div id="slotTrack" class="slot-track"></div>
         </div>
@@ -331,7 +331,7 @@
 <div id="depositInfoModal" class="modal">
     <div class="modal-content">
         <h3>💰 ПОПОЛНЕНИЕ БАЛАНСА</h3>
-        <p style="margin: 16px 0;">Отправьте любой ваш подарок в банк подарков <strong>@riskgift_bank</strong><br>После отправки вам начислят баланс, а подарок появится в инвентаре.</p>
+        <p style="margin: 16px 0;">Отправьте любой ваш подарок в банк подарков <strong>@riskgift_bank</strong><br>После отправки вам начислят баланс. </p>
         <a href="https://t.me/riskgift_bank" target="_blank" class="bank-link">🏦 Перейти в банк подарков</a>
         <button id="closeDepositInfoBtn" class="close-btn" style="margin-top: 16px;">Закрыть</button>
     </div>
@@ -405,12 +405,12 @@
         { name:"Voodoo Doll", valueTon:28.4, icon:"🪆", weight:12 },
         { name:"Kissed Frog", valueTon:36.1, icon:"🐸", weight:8 },
         // дополнительные для разнообразия с низкими весами
-        { name:"⭐ NFT Star", valueTon:5.0, icon:"⭐", weight:55 },
-        { name:"🔴 Red Diamond", valueTon:8.5, icon:"💎", weight:48 },
-        { name:"💠 Neon Vortex", valueTon:12.0, icon:"🌀", weight:35 },
-        { name:"👾 Alien Artifact", valueTon:19.5, icon:"👾", weight:20 },
-        { name:"🌙 Lunar Token", valueTon:22.0, icon:"🌙", weight:18 },
-        { name:"Sharp Tongue", valueTon:34.6, icon:"👅", weight:10 }
+        { name:"⭐ NFT Star", valueTon:0.3, icon:"⭐", weight:55 },
+        { name:"🔴 Red Diamond", valueTon:1.2, icon:"💎", weight:48 },
+        { name:"💠 Neon Vortex", valueTon:1.0, icon:"🌀", weight:35 },
+        { name:"👾 Alien Artifact", valueTon:0.8, icon:"👾", weight:20 },
+        { name:"🌙 Lunar Token", valueTon:0.5, icon:"🌙", weight:18 },
+        { name:"Sharp Tongue", valueTon:0.2, icon:"👅", weight:10 }
     ];
 
     let RARE_GIFTS = [];
@@ -500,7 +500,7 @@
             }
         }
         if (!allUsersData[currentUser]) {
-            allUsersData[currentUser] = { tonBalance: 15.0, inventory: initInventoryObj(), history: [] };
+            allUsersData[currentUser] = { tonBalance: 10.0, inventory: initInventoryObj(), history: [] };
         }
         userHistory = allUsersData[currentUser].history || [];
         saveAllData();
