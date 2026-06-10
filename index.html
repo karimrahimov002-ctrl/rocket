@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Riskgift — пополнение баланса + скрытая админка</title>
+    <title>Riskgift — полностью работающая версия</title>
     <!-- TON Connect UI SDK -->
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
@@ -20,16 +20,6 @@
             min-height: 100vh;
             color: #f0f3ff;
             padding: 16px 12px 32px;
-        }
-        .glow { text-shadow: 0 0 5px #0ff, 0 0 10px #0ff8; }
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            100% { transform: translateY(-8px); }
-        }
-        @keyframes pulse-glow {
-            0% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.4); }
-            70% { box-shadow: 0 0 0 12px rgba(0, 255, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0); }
         }
         .top-bar {
             display: flex;
@@ -92,6 +82,7 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 16px;
             padding: 8px 4px;
+            margin-bottom: 20px;
         }
         .case-item {
             background: linear-gradient(145deg, #11161f, #080c14);
@@ -100,11 +91,6 @@
             text-align: center;
             transition: all 0.2s;
             border: 1px solid rgba(0, 255, 255, 0.2);
-        }
-        .case-item:hover {
-            transform: translateY(-3px);
-            border-color: cyan;
-            box-shadow: 0 8px 20px -6px #0ff3;
         }
         .case-3d-icon { font-size: 2.5rem; filter: drop-shadow(0 0 4px cyan); margin: 6px 0; }
         .case-title { font-weight: 700; font-size: 0.9rem; }
@@ -128,6 +114,19 @@
             width: 100%;
             cursor: pointer;
             font-size: 0.8rem;
+        }
+        .admin-bottom-btn {
+            background: #2a2e4a;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            width: 100%;
+            margin: 20px 0 10px;
+            cursor: pointer;
+            text-align: center;
         }
         .modal {
             position: fixed;
@@ -160,7 +159,6 @@
             background: #00000099;
             border-radius: 60px;
             padding: 8px 0;
-            position: relative;
         }
         .slot-track {
             display: flex;
@@ -175,12 +173,11 @@
             padding: 16px 12px;
             text-align: center;
             border: 1px solid rgba(0, 255, 255, 0.4);
-            box-shadow: 0 0 10px rgba(0,255,255,0.2);
         }
         .slot-icon { font-size: 2.5rem; margin-bottom: 8px; display: flex; justify-content: center; }
         .slot-icon img { width: 48px; height: 48px; object-fit: contain; }
         .slot-label { font-size: 0.75rem; font-weight: bold; color: cyan; }
-        .inventory-list, .history-list, .admin-items-list {
+        .inventory-list, .admin-items-list {
             max-height: 400px;
             overflow-y: auto;
             margin: 12px 0;
@@ -219,25 +216,8 @@
             cursor: pointer;
             font-size: 0.85rem;
         }
-        .sell-btn { background: linear-gradient(90deg, #ffaa00, #ff6600); color: black; margin-left: 4px; }
         .close-btn, .secondary-btn { background: #222; color: white; }
         .flex-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
-        .bank-link {
-            display: inline-block;
-            margin: 8px 0;
-            background: #2a2e4a;
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 60px;
-        }
-        .history-item {
-            background: linear-gradient(135deg, #0f1422, #0a0e1a);
-            border-radius: 24px;
-            padding: 10px 16px;
-            margin-bottom: 8px;
-            border-left: 3px solid cyan;
-        }
         .amount-select {
             display: flex;
             flex-wrap: wrap;
@@ -295,6 +275,8 @@
     <button id="inventoryMainBtn" class="inventory-btn">📦 МОЙ ИНВЕНТАРЬ (подарки и NFT)</button>
     
     <div class="cases-grid" id="casesContainer"></div>
+    
+    <button id="adminBottomBtn" class="admin-bottom-btn">🔧 АДМИН ПАНЕЛЬ (загрузка фото)</button>
 </div>
 
 <!-- Барабан -->
@@ -311,15 +293,7 @@
 <div id="depositModal" class="modal">
     <div class="modal-content">
         <h3>💰 ПОПОЛНЕНИЕ БАЛАНСА (TON)</h3>
-        <p>Выберите сумму:</p>
-        <div class="amount-select" id="amountSelect">
-            <div class="amount-btn" data-amount="1">1 TON</div>
-            <div class="amount-btn" data-amount="5">5 TON</div>
-            <div class="amount-btn" data-amount="10">10 TON</div>
-            <div class="amount-btn" data-amount="25">25 TON</div>
-            <div class="amount-btn" data-amount="50">50 TON</div>
-            <div class="amount-btn" data-amount="100">100 TON</div>
-        </div>
+        <div class="amount-select" id="amountSelect"></div>
         <div style="margin: 12px 0;">
             <input type="number" id="customAmount" class="custom-amount" placeholder="Своя сумма" min="1" step="1">
         </div>
@@ -340,7 +314,7 @@
     </div>
 </div>
 
-<!-- Админ-панель (скрытая) -->
+<!-- Админ-панель -->
 <div id="adminModal" class="modal">
     <div class="modal-content" style="max-width: 600px;">
         <h3>🔧 АДМИН-ПАНЕЛЬ (загрузка фото)</h3>
@@ -350,28 +324,36 @@
 </div>
 
 <script>
-    // ========== НАСТРОЙКИ TON CONNECT ==========
-    const PROJECT_WALLET_ADDRESS = "EQD..."; // ЗАМЕНИТЕ НА ВАШ АДРЕС
+    // ========== НАСТРОЙКИ ==========
+    // ⚠️ ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ АДРЕС КОШЕЛЬКА (например, "EQD...")
+    const PROJECT_WALLET_ADDRESS = "EQD..."; 
     const MANIFEST_URL = "https://raw.githubusercontent.com/ton-connect/demo-dapp/main/manifest.json";
+    
     let tonConnectUI = null;
     
+    // ========== ИНИЦИАЛИЗАЦИЯ TON CONNECT ==========
     function initTonConnect() {
-        tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: MANIFEST_URL,
-            buttonRootId: "tonConnectButton" // не используется, но для совместимости
-        });
+        if (typeof TON_CONNECT_UI !== 'undefined') {
+            tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+                manifestUrl: MANIFEST_URL,
+                buttonRootId: null
+            });
+            console.log("TON Connect готов");
+        } else {
+            console.warn("TON Connect SDK не загрузился");
+        }
     }
     
-    // ========== КОНФИГУРАЦИЯ ==========
+    // ========== ДАННЫЕ ИГРЫ ==========
     const CASES = [
-        { id:0, name:"Trash Case", price:0.1, icon:"🗑️", drops:["0.01-0.05 TON"] },
-        { id:1, name:"Starter Pack", price:1, icon:"📦", drops:["0.1-0.5 TON"] },
-        { id:2, name:"Crypto Vortex", price:5, icon:"🌀", drops:["0.5-2.5 TON"] },
-        { id:15, name:"Neon Rush", price:5, icon:"⚡", drops:["0.6-2.8 TON"] },
-        { id:3, name:"Hype Blaze", price:10, icon:"🔥", drops:["1-5 TON"] },
-        { id:16, name:"Phantom Core", price:10, icon:"👻", drops:["1.2-6 TON"] },
-        { id:4, name:"Magnate", price:25, icon:"👑", drops:["2.5-12 TON"] },
-        { id:17, name:"Golden Era", price:25, icon:"🏆", drops:["3-13 TON"] }
+        { id:0, name:"Trash Case", price:0.1, icon:"🗑️" },
+        { id:1, name:"Starter Pack", price:1, icon:"📦" },
+        { id:2, name:"Crypto Vortex", price:5, icon:"🌀" },
+        { id:15, name:"Neon Rush", price:5, icon:"⚡" },
+        { id:3, name:"Hype Blaze", price:10, icon:"🔥" },
+        { id:16, name:"Phantom Core", price:10, icon:"👻" },
+        { id:4, name:"Magnate", price:25, icon:"👑" },
+        { id:17, name:"Golden Era", price:25, icon:"🏆" }
     ];
     
     const RARE_GIFTS_DATA = [
@@ -512,7 +494,6 @@
         return false;
     }
     
-    // Генерация случайного слота для барабана
     function generateRandomSlotItem(casePrice) {
         const r = Math.random();
         if (r < 0.6) {
@@ -529,7 +510,6 @@
         }
     }
     
-    // Честный барабан
     function spinSlot(casePrice, onComplete) {
         const slotTrack = document.getElementById('slotTrack');
         const resultMsg = document.getElementById('slotResultMsg');
@@ -549,7 +529,7 @@
         const extraSpin = 1600 + Math.random() * 1000;
         const finalOffset = -extraSpin;
         slotTrack.style.transition = 'none';
-        slotTrack.style.transform = `translateX(0px)`;
+        slotTrack.style.transform = 'translateX(0px)';
         setTimeout(() => {
             slotTrack.style.transition = 'transform cubic-bezier(0.1, 0.9, 0.2, 1.05) 2.8s';
             slotTrack.style.transform = `translateX(${finalOffset}px)`;
@@ -594,7 +574,6 @@
         setTimeout(() => finishHandler(), 3000);
     }
     
-    // Открытие кейса за внутренний баланс
     function openCase(caseObj) {
         const user = getUserData();
         if (user.tonBalance < caseObj.price) {
@@ -631,7 +610,6 @@
         });
     }
     
-    // Инвентарь
     function renderInventoryModal() {
         const container = document.getElementById('inventoryModalList');
         const user = getUserData();
@@ -665,12 +643,14 @@
         });
     }
     
-    // Пополнение через TON Connect (добавляет баланс)
     async function depositBalance(amountTon) {
-        if (!tonConnectUI) { alert("TON Connect не инициализирован"); return; }
+        if (!tonConnectUI) {
+            alert("TON Connect не инициализирован. Попробуйте перезагрузить страницу.");
+            return;
+        }
         const wallet = tonConnectUI.account;
         if (!wallet) {
-            alert("Сначала подключите кошелёк через кнопку вверху");
+            alert("Сначала подключите кошелёк — нажмите на кнопку вверху справа (если её нет, обновите страницу)");
             await tonConnectUI.connectWallet();
             if (!tonConnectUI.account) { alert("Не удалось подключить кошелёк"); return; }
         }
@@ -694,19 +674,24 @@
         }
     }
     
-    // Модалка пополнения
     let selectedAmount = null;
     function showDepositModal() {
-        document.getElementById('depositModal').classList.add('active');
-        document.querySelectorAll('.amount-btn').forEach(btn => {
-            btn.classList.remove('active');
+        const amountSelectDiv = document.getElementById('amountSelect');
+        amountSelectDiv.innerHTML = '';
+        [1,5,10,25,50,100].forEach(amt => {
+            const btn = document.createElement('div');
+            btn.className = 'amount-btn';
+            btn.innerText = `${amt} TON`;
+            btn.dataset.amount = amt;
             btn.onclick = () => {
                 document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                selectedAmount = parseFloat(btn.dataset.amount);
+                selectedAmount = amt;
                 document.getElementById('customAmount').value = '';
             };
+            amountSelectDiv.appendChild(btn);
         });
+        document.getElementById('customAmount').value = '';
         document.getElementById('customAmount').oninput = (e) => {
             document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
             selectedAmount = parseFloat(e.target.value);
@@ -721,20 +706,16 @@
             if (!amount || amount <= 0) { alert("Выберите сумму"); return; }
             await depositBalance(amount);
         };
+        document.getElementById('depositModal').classList.add('active');
     }
     
-    // Пополнение подарком через банк (симуляция: получаем случайный подарок)
     function depositGiftFromBank() {
-        // Добавляем случайный редкий подарок в инвентарь
         const randomGift = RARE_GIFTS[Math.floor(Math.random() * RARE_GIFTS.length)];
         addRareGiftToUser(randomGift.id);
         alert(`🎁 Вы отправили подарок в банк @riskgift_bank и получили ${randomGift.icon} ${randomGift.name} в инвентарь!`);
         renderInventoryModal();
     }
     
-    // Админ-панель (скрытая, двойной клик по логотипу)
-    let adminClickCount = 0;
-    let adminTimer = null;
     function showAdminPanel() {
         const container = document.getElementById('adminItemsList');
         container.innerHTML = '<h4>Редкие подарки</h4>';
@@ -773,7 +754,7 @@
                     if (type === 'rare') RARE_GIFTS[idx].image = base64;
                     else NFT_GIFTS[idx].image = base64;
                     saveItemsConfig();
-                    showAdminPanel(); // обновить список
+                    showAdminPanel();
                     alert('Фото сохранено!');
                 };
                 reader.readAsDataURL(file);
@@ -812,11 +793,8 @@
         document.getElementById('closeSlotBtn').onclick = () => document.getElementById('slotModal').classList.remove('active');
         document.getElementById('closeAdminBtn').onclick = () => document.getElementById('adminModal').classList.remove('active');
         
-        // Скрытая админка: двойной клик по логотипу
-        const logo = document.getElementById('adminSecretTrigger');
-        logo.addEventListener('dblclick', () => {
-            showAdminPanel();
-        });
+        document.getElementById('adminBottomBtn').onclick = () => showAdminPanel();
+        document.getElementById('adminSecretTrigger').addEventListener('dblclick', () => showAdminPanel());
     }
     init();
 </script>
