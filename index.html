@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Riskgift — точные цены, честные шансы, 1 предмет за раз</title>
+    <title>Riskgift — кейсы с честным барабаном</title>
     <style>
         * {
             margin: 0;
@@ -67,16 +67,6 @@
             box-shadow: 0 0 8px cyan;
         }
         .plus-btn:hover { transform: scale(1.05); }
-        .admin-btn {
-            background: #c41e3a;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            padding: 8px 16px;
-            border-radius: 40px;
-            cursor: pointer;
-            margin-left: 8px;
-        }
         .inventory-btn {
             background: linear-gradient(90deg, #7a5ac5, #4a2a8a);
             color: white;
@@ -196,7 +186,7 @@
             font-weight: bold;
             color: cyan;
         }
-        .inventory-list, .history-list, .admin-items-list {
+        .inventory-list, .history-list {
             max-height: 400px;
             overflow-y: auto;
             margin: 12px 0;
@@ -268,29 +258,6 @@
             margin-bottom: 8px;
             border-left: 3px solid cyan;
         }
-        .admin-item-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding: 8px;
-            background: #00000055;
-            border-radius: 28px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .image-preview {
-            width: 48px;
-            height: 48px;
-            background: #222;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        .image-preview img { max-width: 100%; max-height: 100%; }
-        input[type="file"] { background: #1a1f2e; color: white; border-radius: 40px; padding: 6px; }
     </style>
 </head>
 <body>
@@ -300,9 +267,6 @@
         <div class="balance-box">
             💰 <span id="userBalance">0.00</span> TON
             <div class="plus-btn" id="plusBalanceBtn">+</div>
-        </div>
-        <div>
-            <button id="adminAccessBtn" class="admin-btn">🔐 Админ</button>
         </div>
     </div>
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
@@ -346,31 +310,8 @@
     </div>
 </div>
 
-<!-- МОДАЛКА АДМИНКИ -->
-<div id="adminCodeModal" class="modal">
-    <div class="modal-content">
-        <h3>🔐 АДМИН-ПАНЕЛЬ</h3>
-        <p>Введите секретный код:</p>
-        <input type="password" id="adminCodeInput" style="background:#1a1f2e; border:1px solid cyan; border-radius: 60px; padding: 10px; color:white; text-align:center; margin:12px 0; width:80%;">
-        <div class="flex-btns">
-            <button id="submitAdminCodeBtn">Войти</button>
-            <button id="closeAdminCodeModalBtn" class="close-btn">Отмена</button>
-        </div>
-    </div>
-</div>
-
-<div id="adminPanelModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <h3>⚙️ АДМИН-ПАНЕЛЬ — загрузка фото для предметов</h3>
-        <div id="adminItemsList" class="admin-items-list"></div>
-        <button id="closeAdminPanelBtn" class="close-btn">Закрыть</button>
-    </div>
-</div>
-
 <script>
-    // ========== КОНФИГУРАЦИЯ С НОВЫМИ ЦЕНАМИ И ВЕСАМИ ==========
-    const ADMIN_CODE = "admin2025";
-
+    // ========== КОНФИГУРАЦИЯ ==========
     const CASES = [
         { id:0, name:"Trash Case", price:0.1, icon:"🗑️", drops:["0.01-0.05 TON","Обычный подарок"] },
         { id:1, name:"Starter Pack", price:1, icon:"📦", drops:["0.1-0.5 TON","Редкий"] },
@@ -382,20 +323,15 @@
         { id:17, name:"Golden Era", price:25, icon:"🏆", drops:["3-13 TON","Гарант NFT 15%"] }
     ];
 
-    // Редкие подарки с новыми ценами и весами (чем выше цена, тем меньше вес)
+    // Редкие подарки с новыми ценами и весами (меньше вес — реже выпадает)
     const RARE_GIFTS_DATA = [
         { id:"xmas", name:"Xmas Stocking", icon:"🧦", rarity:"rare", valueTon:2.2, weight:40 },
-        { id:"clover", name:"Clover Pin", icon:"🍀", rarity:"rare", valueTon:3.4, weight:25 },
+        { id:"clover", name:"Clover Pin", icon:"🍀", rarity:"rare", valueTon:3.4, weight:30 },
         { id:"tama", name:"Tama Gadget", icon:"📟", rarity:"epic", valueTon:2.6, weight:35 },
         { id:"lol", name:"Lol Pop", icon:"😂", rarity:"rare", valueTon:2.4, weight:38 },
         { id:"ice", name:"Ice Cream", icon:"🍦", rarity:"common", valueTon:2.4, weight:38 },
         { id:"snoop", name:"Snoop Dogg", icon:"🐶", rarity:"legendary", valueTon:4.8, weight:12 },
-        // дополнительные из старого списка (оставляем для баланса, но с низкими весами)
-        { id:"calendar", name:"Desk Calendar", icon:"📅", rarity:"common", valueTon:4.2, weight:18 },
-        { id:"golden", name:"Golden Ticket", icon:"🎫", rarity:"epic", valueTon:1.2, weight:50 },
-        { id:"dragon", name:"Dragon Scale", icon:"🐉", rarity:"legendary", valueTon:2.0, weight:30 },
-        { id:"phoenix", name:"Phoenix Feather", icon:"🔥", rarity:"legendary", valueTon:2.5, weight:28 },
-        { id:"crystal", name:"Crystal Heart", icon:"💎", rarity:"epic", valueTon:1.8, weight:32 }
+        { id:"calendar", name:"Desk Calendar", icon:"📅", rarity:"common", valueTon:4.2, weight:20 }
     ];
 
     // NFT с новыми ценами и весами
@@ -403,20 +339,12 @@
         { name:"Mad Pumpkin", valueTon:9.1, icon:"🎃", weight:45 },
         { name:"Eternal Rose", valueTon:17.9, icon:"🌹", weight:25 },
         { name:"Voodoo Doll", valueTon:28.4, icon:"🪆", weight:12 },
-        { name:"Kissed Frog", valueTon:36.1, icon:"🐸", weight:8 },
-        // дополнительные для разнообразия с низкими весами
-        { name:"⭐ NFT Star", valueTon:5.0, icon:"⭐", weight:55 },
-        { name:"🔴 Red Diamond", valueTon:8.5, icon:"💎", weight:48 },
-        { name:"💠 Neon Vortex", valueTon:12.0, icon:"🌀", weight:35 },
-        { name:"👾 Alien Artifact", valueTon:19.5, icon:"👾", weight:20 },
-        { name:"🌙 Lunar Token", valueTon:22.0, icon:"🌙", weight:18 },
-        { name:"Sharp Tongue", valueTon:34.6, icon:"👅", weight:10 }
+        { name:"Kissed Frog", valueTon:36.1, icon:"🐸", weight:8 }
     ];
 
     let RARE_GIFTS = [];
     let NFT_GIFTS = [];
 
-    // Функция для выбора случайного элемента с учётом весов
     function weightedRandom(items) {
         let totalWeight = items.reduce((sum, item) => sum + (item.weight || 1), 0);
         let rand = Math.random() * totalWeight;
@@ -429,31 +357,8 @@
     }
 
     function initGiftsArrays() {
-        // Копируем данные, добавляем поле image
         RARE_GIFTS = RARE_GIFTS_DATA.map(g => ({ ...g, image: null }));
         NFT_GIFTS = NFT_GIFTS_DATA.map(n => ({ ...n, image: null }));
-        
-        const saved = localStorage.getItem('riskgift_items_config');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                // восстанавливаем картинки, если есть
-                if (data.rareGifts) {
-                    data.rareGifts.forEach((savedItem, idx) => {
-                        if (RARE_GIFTS[idx]) RARE_GIFTS[idx].image = savedItem.image;
-                    });
-                }
-                if (data.nftGifts) {
-                    data.nftGifts.forEach((savedItem, idx) => {
-                        if (NFT_GIFTS[idx]) NFT_GIFTS[idx].image = savedItem.image;
-                    });
-                }
-            } catch(e) {}
-        }
-        saveItemsConfig();
-    }
-    function saveItemsConfig() {
-        localStorage.setItem('riskgift_items_config', JSON.stringify({ rareGifts: RARE_GIFTS, nftGifts: NFT_GIFTS }));
     }
 
     // Глобальные данные пользователей
@@ -469,7 +374,7 @@
     }
 
     function loadAllData() {
-        const saved = localStorage.getItem('riskgift_allusers_v15');
+        const saved = localStorage.getItem('riskgift_allusers_v16');
         if (saved) {
             try {
                 const data = JSON.parse(saved);
@@ -481,7 +386,7 @@
         }
     }
     function saveAllData() {
-        localStorage.setItem('riskgift_allusers_v15', JSON.stringify({ allUsers: allUsersData }));
+        localStorage.setItem('riskgift_allusers_v16', JSON.stringify({ allUsers: allUsersData }));
     }
 
     function initCurrentUser() {
@@ -599,7 +504,6 @@
         
         const slotWidth = 116;
         const containerWidth = document.querySelector('.slot-machine').clientWidth;
-        const startOffset = containerWidth / 2 - slotWidth / 2;
         const extraSpin = 1600 + Math.random() * 1000;
         const finalOffset = -extraSpin;
         
@@ -675,7 +579,7 @@
                 <div class="case-3d-icon">${c.icon}</div>
                 <div class="case-title">${c.name}</div>
                 <div class="case-price">${c.price} TON</div>
-                <div class="case-drops" onclick="alert('${c.name}\\nВозможные выигрыши:\\n${c.drops.join('\\n')}\\n\\n60% TON\\n25% редкий подарок (шанс зависит от цены)\\n15% NFT (шанс зависит от цены)')">📋 Таблица дропов</div>
+                <div class="case-drops" onclick="alert('${c.name}\\nВозможные выигрыши:\\n${c.drops.join('\\n')}\\n\\n60% TON\\n25% редкий подарок\\n15% NFT')">📋 Таблица дропов</div>
                 <button class="btn-open" data-id="${c.id}">ОТКРЫТЬ</button>
             `;
             container.appendChild(div);
@@ -689,7 +593,7 @@
         });
     }
 
-    // Инвентарь с кнопками "Вывести" и "Продать" (каждый предмет отображается один раз)
+    // Инвентарь — каждый предмет отображается с количеством, кнопки работают на 1 единицу
     function renderInventoryModal() {
         const container = document.getElementById('inventoryModalList');
         const user = getUserData();
@@ -699,9 +603,6 @@
             if (count > 0) {
                 const rarityClass = g.rarity === 'common' ? 'rarity-common' : (g.rarity === 'rare' ? 'rarity-rare' : (g.rarity === 'epic' ? 'rarity-epic' : 'rarity-legendary'));
                 const rarityName = { common:'Обычный', rare:'Редкий', epic:'Эпический', legendary:'Легендарный' }[g.rarity];
-                // Показываем количество, но каждая копия — отдельная карточка? Нет, показываем строку с количеством и кнопками "Вывести" и "Продать" для всего количества.
-                // Но по логике, если у пользователя несколько одинаковых, то кнопка "Вывести" должна выводить 1 штуку.
-                // Сделаем так: для каждого предмета отображаем одну строку с количеством и кнопки "Вывести 1" и "Продать 1".
                 const imgHtml = g.image ? `<img src="${g.image}">` : `<div style="font-size:2rem;">${g.icon}</div>`;
                 container.innerHTML += `
                     <div class="gift-card">
@@ -715,14 +616,13 @@
                             </div>
                         </div>
                         <div>
-                            <button class="withdrawFromInventoryBtn" data-gift-type="rare" data-gift-id="${g.id}">ВЫВЕСТИ 1</button>
-                            <button class="sellFromInventoryBtn" data-gift-type="rare" data-gift-id="${g.id}" data-value="${g.valueTon}">ПРОДАТЬ 1</button>
+                            <button class="withdrawRareBtn" data-gift-id="${g.id}">ВЫВЕСТИ 1</button>
+                            <button class="sellRareBtn" data-gift-id="${g.id}" data-value="${g.valueTon}">ПРОДАТЬ 1</button>
                         </div>
                     </div>
                 `;
             }
         }
-        // NFT — каждый экземпляр показываем отдельно, потому что они уникальны
         user.inventory.nft.forEach((nft, idx) => {
             const imgHtml = nft.image ? `<img src="${nft.image}">` : `<div style="font-size:2rem;">${nft.icon || '🏷️'}</div>`;
             container.innerHTML += `
@@ -736,117 +636,56 @@
                         </div>
                     </div>
                     <div>
-                        <button class="withdrawFromInventoryBtn" data-gift-type="nft" data-idx="${idx}">ВЫВЕСТИ</button>
-                        <button class="sellFromInventoryBtn" data-gift-type="nft" data-idx="${idx}" data-value="${nft.valueTon}">ПРОДАТЬ</button>
+                        <button class="withdrawNftBtn" data-idx="${idx}">ВЫВЕСТИ</button>
+                        <button class="sellNftBtn" data-idx="${idx}" data-value="${nft.valueTon}">ПРОДАТЬ</button>
                     </div>
                 </div>
             `;
         });
         if (container.innerHTML === '') container.innerHTML = '<div style="padding:20px; text-align:center;">У вас пока нет подарков. Открывайте кейсы или отправляйте подарки в банк!</div>';
         
-        // Вывод
-        document.querySelectorAll('.withdrawFromInventoryBtn').forEach(btn => {
+        // Вывод редких
+        document.querySelectorAll('.withdrawRareBtn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const type = btn.getAttribute('data-gift-type');
-                if (type === 'rare') {
-                    const giftId = btn.getAttribute('data-gift-id');
-                    if (removeRareGift(giftId)) {
-                        alert(`✅ Подарок отправлен в Telegram!`);
-                        renderInventoryModal();
-                    } else alert('Нет такого подарка');
-                } else if (type === 'nft') {
-                    const idx = parseInt(btn.getAttribute('data-idx'));
-                    if (removeNftItem(idx)) {
-                        alert(`✅ NFT отправлен в Telegram!`);
-                        renderInventoryModal();
-                    }
-                }
+                const giftId = btn.getAttribute('data-gift-id');
+                if (removeRareGift(giftId)) {
+                    alert(`✅ Подарок отправлен в Telegram!`);
+                    renderInventoryModal();
+                } else alert('Нет такого подарка');
             });
         });
-        // Продажа
-        document.querySelectorAll('.sellFromInventoryBtn').forEach(btn => {
+        // Продажа редких
+        document.querySelectorAll('.sellRareBtn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const type = btn.getAttribute('data-gift-type');
+                const giftId = btn.getAttribute('data-gift-id');
                 const value = parseFloat(btn.getAttribute('data-value'));
-                if (type === 'rare') {
-                    const giftId = btn.getAttribute('data-gift-id');
-                    if (removeRareGift(giftId)) {
-                        addTonToUser(value);
-                        alert(`💰 Вы продали предмет за ${value.toFixed(2)} TON!`);
-                        renderInventoryModal();
-                    } else alert('Нет такого подарка');
-                } else if (type === 'nft') {
-                    const idx = parseInt(btn.getAttribute('data-idx'));
-                    if (removeNftItem(idx)) {
-                        addTonToUser(value);
-                        alert(`💰 Вы продали NFT за ${value.toFixed(2)} TON!`);
-                        renderInventoryModal();
-                    }
-                }
+                if (removeRareGift(giftId)) {
+                    addTonToUser(value);
+                    alert(`💰 Вы продали предмет за ${value.toFixed(2)} TON!`);
+                    renderInventoryModal();
+                } else alert('Нет такого подарка');
             });
         });
-    }
-
-    // Админ-панель (загрузка фото)
-    function renderAdminItemsPanel() {
-        const container = document.getElementById('adminItemsList');
-        container.innerHTML = '<h4>Редкие подарки</h4>';
-        RARE_GIFTS.forEach((item, idx) => {
-            const imgHtml = item.image ? `<img src="${item.image}" style="max-width:40px; max-height:40px;">` : 'нет фото';
-            container.innerHTML += `
-                <div class="admin-item-row">
-                    <div style="min-width:120px;">${item.icon} ${item.name} (${item.valueTon} TON)</div>
-                    <div class="image-preview">${imgHtml}</div>
-                    <input type="file" accept="image/*" data-type="rare" data-idx="${idx}" class="adminImageInput">
-                    <button class="clearImageBtn" data-type="rare" data-idx="${idx}">🗑️ очистить</button>
-                </div>
-            `;
-        });
-        container.innerHTML += '<h4 style="margin-top:16px;">NFT подарки</h4>';
-        NFT_GIFTS.forEach((item, idx) => {
-            const imgHtml = item.image ? `<img src="${item.image}" style="max-width:40px; max-height:40px;">` : 'нет фото';
-            container.innerHTML += `
-                <div class="admin-item-row">
-                    <div style="min-width:120px;">${item.icon} ${item.name} (${item.valueTon} TON)</div>
-                    <div class="image-preview">${imgHtml}</div>
-                    <input type="file" accept="image/*" data-type="nft" data-idx="${idx}" class="adminImageInput">
-                    <button class="clearImageBtn" data-type="nft" data-idx="${idx}">🗑️ очистить</button>
-                </div>
-            `;
-        });
-        document.querySelectorAll('.adminImageInput').forEach(input => {
-            input.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    const base64 = ev.target.result;
-                    const type = input.getAttribute('data-type');
-                    const idx = parseInt(input.getAttribute('data-idx'));
-                    if (type === 'rare') {
-                        RARE_GIFTS[idx].image = base64;
-                    } else {
-                        NFT_GIFTS[idx].image = base64;
-                    }
-                    saveItemsConfig();
-                    renderAdminItemsPanel();
-                    alert('Фото сохранено!');
-                };
-                reader.readAsDataURL(file);
-            });
-        });
-        document.querySelectorAll('.clearImageBtn').forEach(btn => {
+        // Вывод NFT
+        document.querySelectorAll('.withdrawNftBtn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const type = btn.getAttribute('data-type');
                 const idx = parseInt(btn.getAttribute('data-idx'));
-                if (type === 'rare') {
-                    RARE_GIFTS[idx].image = null;
-                } else {
-                    NFT_GIFTS[idx].image = null;
+                if (removeNftItem(idx)) {
+                    alert(`✅ NFT отправлен в Telegram!`);
+                    renderInventoryModal();
                 }
-                saveItemsConfig();
-                renderAdminItemsPanel();
-                alert('Фото удалено');
+            });
+        });
+        // Продажа NFT
+        document.querySelectorAll('.sellNftBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-idx'));
+                const value = parseFloat(btn.getAttribute('data-value'));
+                if (removeNftItem(idx)) {
+                    addTonToUser(value);
+                    alert(`💰 Вы продали NFT за ${value.toFixed(2)} TON!`);
+                    renderInventoryModal();
+                }
             });
         });
     }
@@ -869,24 +708,6 @@
         };
         document.getElementById('closeInventoryModalBtn').onclick = () => inventoryModal.classList.remove('active');
         document.getElementById('closeSlotBtn').onclick = () => document.getElementById('slotModal').classList.remove('active');
-        
-        // Админка
-        const adminCodeModal = document.getElementById('adminCodeModal');
-        const adminPanelModal = document.getElementById('adminPanelModal');
-        document.getElementById('adminAccessBtn').onclick = () => adminCodeModal.classList.add('active');
-        document.getElementById('closeAdminCodeModalBtn').onclick = () => adminCodeModal.classList.remove('active');
-        document.getElementById('submitAdminCodeBtn').onclick = () => {
-            const code = document.getElementById('adminCodeInput').value;
-            if (code === ADMIN_CODE) {
-                adminCodeModal.classList.remove('active');
-                renderAdminItemsPanel();
-                adminPanelModal.classList.add('active');
-            } else {
-                alert('Неверный код');
-            }
-            document.getElementById('adminCodeInput').value = '';
-        };
-        document.getElementById('closeAdminPanelBtn').onclick = () => adminPanelModal.classList.remove('active');
     }
     init();
 </script>
