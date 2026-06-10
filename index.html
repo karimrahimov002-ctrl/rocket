@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Riskgift — пополнение через TON Connect</title>
-    <!-- TON Connect UI SDK -->
+    <title>Riskgift — кейсы + пополнение TON и подарками + загрузка фото (админка)</title>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         * {
@@ -20,16 +19,6 @@
             min-height: 100vh;
             color: #f0f3ff;
             padding: 16px 12px 32px;
-        }
-        .glow { text-shadow: 0 0 5px #0ff, 0 0 10px #0ff8; }
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            100% { transform: translateY(-8px); }
-        }
-        @keyframes pulse-glow {
-            0% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.4); }
-            70% { box-shadow: 0 0 0 12px rgba(0, 255, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0); }
         }
         .top-bar {
             display: flex;
@@ -68,15 +57,15 @@
             transition: 0.2s;
             box-shadow: 0 0 8px cyan;
         }
-        .plus-btn:hover { transform: scale(1.05); }
-        .ton-connect-btn {
-            background: #0088cc;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-size: 0.9rem;
+        .admin-badge {
+            background: #4a2a2a;
             border: none;
+            color: #aaa;
+            font-size: 0.7rem;
+            padding: 4px 12px;
+            border-radius: 40px;
             cursor: pointer;
+            margin-left: 8px;
         }
         .inventory-btn {
             background: linear-gradient(90deg, #7a5ac5, #4a2a8a);
@@ -153,7 +142,7 @@
             backdrop-filter: blur(20px);
             border-radius: 40px;
             width: 90%;
-            max-width: 500px;
+            max-width: 550px;
             padding: 20px 16px;
             border: 1px solid cyan;
             text-align: center;
@@ -164,7 +153,6 @@
             background: #00000099;
             border-radius: 60px;
             padding: 8px 0;
-            position: relative;
         }
         .slot-track {
             display: flex;
@@ -179,12 +167,11 @@
             padding: 16px 12px;
             text-align: center;
             border: 1px solid rgba(0, 255, 255, 0.4);
-            box-shadow: 0 0 10px rgba(0,255,255,0.2);
         }
         .slot-icon { font-size: 2.5rem; margin-bottom: 8px; display: flex; justify-content: center; }
         .slot-icon img { width: 48px; height: 48px; object-fit: contain; }
         .slot-label { font-size: 0.75rem; font-weight: bold; color: cyan; }
-        .inventory-list, .history-list {
+        .inventory-list, .history-list, .admin-items-list {
             max-height: 400px;
             overflow-y: auto;
             margin: 12px 0;
@@ -216,15 +203,14 @@
         button {
             background: linear-gradient(90deg, #0ff, #0a6cff);
             border: none;
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 40px;
             font-weight: bold;
             color: black;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
-        .sell-btn { background: linear-gradient(90deg, #ffaa00, #ff6600); color: black; margin-left: 4px; }
-        .close-btn, .secondary-btn { background: #222; color: white; }
+        .close-btn { background: #222; color: white; }
         .flex-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
         .bank-link {
             display: inline-block;
@@ -266,6 +252,29 @@
             text-align: center;
             color: white;
         }
+        .admin-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: #00000055;
+            border-radius: 28px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .image-preview {
+            width: 48px;
+            height: 48px;
+            background: #222;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .image-preview img { max-width: 100%; max-height: 100%; }
+        input[type="file"] { background: #1a1f2e; color: white; border-radius: 40px; padding: 6px; }
     </style>
 </head>
 <body>
@@ -276,7 +285,10 @@
             💰 <span id="userBalance">0.00</span> TON
             <div class="plus-btn" id="plusBalanceBtn">+</div>
         </div>
-        <div id="tonConnectButton"></div>
+        <div style="display: flex; gap: 8px;">
+            <div id="tonConnectButton"></div>
+            <button id="adminAccessBtn" class="admin-badge">⚙️</button>
+        </div>
     </div>
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
         <h2>⚡ КЕЙСЫ (до 25 TON)</h2>
@@ -298,11 +310,11 @@
     </div>
 </div>
 
-<!-- МОДАЛКА ПОПОЛНЕНИЯ ЧЕРЕЗ TON CONNECT -->
+<!-- МОДАЛКА ПОПОЛНЕНИЯ TON CONNECT -->
 <div id="depositModal" class="modal">
     <div class="modal-content">
-        <h3>💰 ПОПОЛНЕНИЕ БАЛАНСА</h3>
-        <p>Выберите сумму (TON):</p>
+        <h3>💰 ПОПОЛНЕНИЕ БАЛАНСА (TON)</h3>
+        <p>Выберите сумму:</p>
         <div class="amount-select" id="amountSelect">
             <div class="amount-btn" data-amount="1">1 TON</div>
             <div class="amount-btn" data-amount="5">5 TON</div>
@@ -311,10 +323,12 @@
             <div class="amount-btn" data-amount="50">50 TON</div>
             <div class="amount-btn" data-amount="100">100 TON</div>
         </div>
-        <div style="margin: 12px 0;">
-            <input type="number" id="customAmount" class="custom-amount" placeholder="Своя сумма" min="1" step="1">
-        </div>
-        <button id="confirmDepositBtn" class="ton-connect-btn" style="background: #0a6cff; margin-top: 10px;">💎 Пополнить через TON Connect</button>
+        <div><input type="number" id="customAmount" class="custom-amount" placeholder="Своя сумма" min="1"></div>
+        <button id="confirmDepositBtn" style="background: #0a6cff; margin-top: 12px;">💎 Оплатить через TON Connect</button>
+        <hr style="margin: 16px 0;">
+        <h4>🎁 ИЛИ ПОПОЛНИТЬ ЧЕРЕЗ БАНК ПОДАРКОВ</h4>
+        <p>Отправьте подарок в <strong>@riskgift_bank</strong><br>После отправки нажмите кнопку ниже — подарок появится в инвентаре, и вам начислят баланс.</p>
+        <button id="simulateBankDeposit" style="background: #3a2a6e;">📦 Я отправил подарок в банк</button>
         <button id="closeDepositModalBtn" class="close-btn" style="margin-top: 16px;">Закрыть</button>
     </div>
 </div>
@@ -328,43 +342,44 @@
     </div>
 </div>
 
+<!-- МОДАЛКА АДМИНКИ (загрузка фото) -->
+<div id="adminModal" class="modal">
+    <div class="modal-content" style="max-width: 650px;">
+        <h3>🔧 АДМИН-ПАНЕЛЬ — ЗАГРУЗКА ФОТО ДЛЯ ПОДАРКОВ</h3>
+        <div id="adminItemsList" class="admin-items-list"></div>
+        <button id="closeAdminBtn" class="close-btn">Закрыть</button>
+    </div>
+</div>
+
+<!-- МОДАЛКА ВВОДА КОДА -->
+<div id="adminCodeModal" class="modal">
+    <div class="modal-content">
+        <h3>🔐 ДОСТУП АДМИНИСТРАТОРА</h3>
+        <p>Введите секретный код:</p>
+        <input type="password" id="adminCodeInput" style="background:#1a1f2e; border:1px solid cyan; border-radius: 60px; padding: 10px; color:white; text-align:center; margin:12px 0; width:80%;">
+        <div class="flex-btns">
+            <button id="submitAdminCodeBtn">Войти</button>
+            <button id="closeAdminCodeBtn" class="close-btn">Отмена</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // ========== НАСТРОЙКИ TON CONNECT ==========
-    // !!! ВСТАВЬТЕ ВАШ РЕАЛЬНЫЙ АДРЕС КОШЕЛЬКА ДЛЯ ПРИЁМА TON !!!
-    const PROJECT_WALLET_ADDRESS = "UQAtQAePeh8BtF7blalA1z-ARWr3rH2EHNc4CKWuDlhuGuoT
-"; // ЗАМЕНИТЕ НА ВАШ АДРЕС
-    
-    // Манифест для TON Connect (можно разместить на своём сайте, но для демо используем публичный)
+    const PROJECT_WALLET_ADDRESS = "EQD..."; // ЗАМЕНИТЕ НА ВАШ АДРЕС
     const MANIFEST_URL = "https://raw.githubusercontent.com/ton-connect/demo-dapp/main/manifest.json";
-    
     let tonConnectUI = null;
     
-    // Инициализация TON Connect
     function initTonConnect() {
-        tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: MANIFEST_URL,
-            buttonRootId: "tonConnectButton"
-        });
-        // При изменении кошелька обновляем интерфейс
-        tonConnectUI.onStatusChange((wallet) => {
-            if (wallet) {
-                console.log("Кошелёк подключён:", wallet.account.address);
-            } else {
-                console.log("Кошелёк отключён");
-            }
-        });
+        tonConnectUI = new TON_CONNECT_UI.TonConnectUI({ manifestUrl: MANIFEST_URL, buttonRootId: "tonConnectButton" });
     }
     
-    // ========== ОСТАЛЬНАЯ ЛОГИКА ==========
+    // ========== ДАННЫЕ ПРЕДМЕТОВ ==========
     const CASES = [
-        { id:0, name:"Trash Case", price:0.1, icon:"🗑️", drops:["0.01-0.05 TON"] },
-        { id:1, name:"Starter Pack", price:1, icon:"📦", drops:["0.1-0.5 TON"] },
-        { id:2, name:"Crypto Vortex", price:5, icon:"🌀", drops:["0.5-2.5 TON"] },
-        { id:15, name:"Neon Rush", price:5, icon:"⚡", drops:["0.6-2.8 TON"] },
-        { id:3, name:"Hype Blaze", price:10, icon:"🔥", drops:["1-5 TON"] },
-        { id:16, name:"Phantom Core", price:10, icon:"👻", drops:["1.2-6 TON"] },
-        { id:4, name:"Magnate", price:25, icon:"👑", drops:["2.5-12 TON"] },
-        { id:17, name:"Golden Era", price:25, icon:"🏆", drops:["3-13 TON"] }
+        { id:0, name:"Trash Case", price:0.1, icon:"🗑️" }, { id:1, name:"Starter Pack", price:1, icon:"📦" },
+        { id:2, name:"Crypto Vortex", price:5, icon:"🌀" }, { id:15, name:"Neon Rush", price:5, icon:"⚡" },
+        { id:3, name:"Hype Blaze", price:10, icon:"🔥" }, { id:16, name:"Phantom Core", price:10, icon:"👻" },
+        { id:4, name:"Magnate", price:25, icon:"👑" }, { id:17, name:"Golden Era", price:25, icon:"🏆" }
     ];
     
     const RARE_GIFTS_DATA = [
@@ -383,282 +398,138 @@
         { name:"Kissed Frog", valueTon:36.1, icon:"🐸", weight:8 }
     ];
     
-    let RARE_GIFTS = [];
-    let NFT_GIFTS = [];
-    
+    let RARE_GIFTS = [], NFT_GIFTS = [];
     function initGiftsArrays() {
         RARE_GIFTS = RARE_GIFTS_DATA.map(g => ({ ...g, image: null }));
         NFT_GIFTS = NFT_GIFTS_DATA.map(n => ({ ...n, image: null }));
+        const saved = localStorage.getItem('riskgift_items_config');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.rareGifts) data.rareGifts.forEach((s, i) => { if(RARE_GIFTS[i]) RARE_GIFTS[i].image = s.image; });
+                if (data.nftGifts) data.nftGifts.forEach((s, i) => { if(NFT_GIFTS[i]) NFT_GIFTS[i].image = s.image; });
+            } catch(e) {}
+        }
+        saveItemsConfig();
+    }
+    function saveItemsConfig() {
+        localStorage.setItem('riskgift_items_config', JSON.stringify({ rareGifts: RARE_GIFTS, nftGifts: NFT_GIFTS }));
     }
     
     function weightedRandom(items) {
-        let totalWeight = items.reduce((sum, item) => sum + (item.weight || 1), 0);
-        let rand = Math.random() * totalWeight;
-        let accum = 0;
-        for (let item of items) {
-            accum += (item.weight || 1);
-            if (rand < accum) return item;
-        }
+        let total = items.reduce((s, i) => s + (i.weight || 1), 0);
+        let rand = Math.random() * total, acc = 0;
+        for (let i of items) { acc += (i.weight || 1); if (rand < acc) return i; }
         return items[0];
     }
     
     // Пользовательские данные
-    let allUsersData = {};
-    let currentUser = null;
-    let userHistory = [];
-    
+    let allUsersData = {}, currentUser = null, userHistory = [];
     function initInventoryObj() {
         let inv = {};
         RARE_GIFTS.forEach(g => inv[g.id] = 0);
         inv.nft = [];
         return inv;
     }
-    
     function loadAllData() {
-        const saved = localStorage.getItem('riskgift_allusers_v17');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                allUsersData = data.allUsers || {};
-            } catch(e) {}
-        }
-        if (!allUsersData['default_user']) {
-            allUsersData['default_user'] = { tonBalance: 20.0, inventory: initInventoryObj(), history: [] };
-        }
+        const saved = localStorage.getItem('riskgift_allusers_v18');
+        if (saved) { try { allUsersData = JSON.parse(saved).allUsers || {}; } catch(e) {} }
+        if (!allUsersData['default_user']) allUsersData['default_user'] = { tonBalance: 15.0, inventory: initInventoryObj(), history: [] };
     }
-    function saveAllData() {
-        localStorage.setItem('riskgift_allusers_v17', JSON.stringify({ allUsers: allUsersData }));
-    }
-    
+    function saveAllData() { localStorage.setItem('riskgift_allusers_v18', JSON.stringify({ allUsers: allUsersData })); }
     function initCurrentUser() {
-        let tgUser = null;
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-            tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-        }
-        if (tgUser && tgUser.username) {
-            currentUser = tgUser.username.toLowerCase();
-        } else {
-            let saved = localStorage.getItem('riskgift_temp_user');
-            if (saved) currentUser = saved;
-            else {
-                currentUser = 'user_' + Math.floor(Math.random() * 100000);
-                localStorage.setItem('riskgift_temp_user', currentUser);
-            }
-        }
-        if (!allUsersData[currentUser]) {
-            allUsersData[currentUser] = { tonBalance: 15.0, inventory: initInventoryObj(), history: [] };
-        }
+        let tg = null;
+        if (window.Telegram?.WebApp?.initDataUnsafe?.user?.username) tg = window.Telegram.WebApp.initDataUnsafe.user.username.toLowerCase();
+        if (tg) currentUser = tg;
+        else { let saved = localStorage.getItem('riskgift_temp_user'); currentUser = saved || ('user_' + Math.floor(Math.random()*100000)); localStorage.setItem('riskgift_temp_user', currentUser); }
+        if (!allUsersData[currentUser]) allUsersData[currentUser] = { tonBalance: 15.0, inventory: initInventoryObj(), history: [] };
         userHistory = allUsersData[currentUser].history || [];
         saveAllData();
     }
-    
     function getUserData() { return allUsersData[currentUser]; }
     function updateBalanceUI() { document.getElementById('userBalance').innerText = getUserData().tonBalance.toFixed(4); }
-    function addHistoryEntry(entry) {
-        userHistory.unshift(entry);
-        if (userHistory.length > 20) userHistory.pop();
-        allUsersData[currentUser].history = userHistory;
-        saveAllData();
-    }
-    function addRareGiftToUser(giftId) {
-        const user = getUserData();
-        user.inventory[giftId] = (user.inventory[giftId] || 0) + 1;
-        saveAllData();
-    }
-    function addNftToUser(nftObj) {
-        const user = getUserData();
-        user.inventory.nft.push({ ...nftObj });
-        saveAllData();
-    }
-    function addTonToUser(amount) {
-        getUserData().tonBalance += amount;
-        saveAllData();
-        updateBalanceUI();
-    }
-    function removeRareGift(giftId) {
-        const user = getUserData();
-        if (user.inventory[giftId] > 0) {
-            user.inventory[giftId]--;
-            saveAllData();
-            return true;
-        }
-        return false;
-    }
-    function removeNftItem(idx) {
-        const user = getUserData();
-        if (user.inventory.nft[idx]) {
-            user.inventory.nft.splice(idx, 1);
-            saveAllData();
-            return true;
-        }
-        return false;
-    }
+    function addHistoryEntry(entry) { userHistory.unshift(entry); if(userHistory.length>20) userHistory.pop(); allUsersData[currentUser].history = userHistory; saveAllData(); }
+    function addRareGiftToUser(giftId) { getUserData().inventory[giftId] = (getUserData().inventory[giftId]||0)+1; saveAllData(); }
+    function addNftToUser(nftObj) { getUserData().inventory.nft.push({...nftObj}); saveAllData(); }
+    function addTonToUser(amount) { getUserData().tonBalance += amount; saveAllData(); updateBalanceUI(); }
+    function removeRareGift(giftId) { let inv = getUserData().inventory; if(inv[giftId]>0) { inv[giftId]--; saveAllData(); return true; } return false; }
+    function removeNftItem(idx) { let nft = getUserData().inventory.nft; if(nft[idx]) { nft.splice(idx,1); saveAllData(); return true; } return false; }
     
-    // Генерация случайного слота
+    // Генерация слота
     function generateRandomSlotItem(casePrice) {
         const r = Math.random();
         if (r < 0.6) {
-            const percent = 0.1 + Math.random() * 0.4;
-            let winTon = casePrice * percent;
-            winTon = Math.round(winTon * 1000) / 1000;
-            return { type:'ton', value:winTon, icon:'💰', label:`${winTon.toFixed(3)} TON`, image:null };
+            let winTon = casePrice * (0.1 + Math.random()*0.4);
+            winTon = Math.round(winTon*1000)/1000;
+            return { type:'ton', value:winTon, icon:'💰', label:`${winTon} TON`, image:null };
         } else if (r < 0.85) {
-            const selected = weightedRandom(RARE_GIFTS);
-            return { type:'rare', giftId:selected.id, giftName:selected.name, icon:selected.icon, label:selected.name, image:selected.image, valueTon:selected.valueTon };
+            const g = weightedRandom(RARE_GIFTS);
+            return { type:'rare', giftId:g.id, giftName:g.name, icon:g.icon, label:g.name, image:g.image, valueTon:g.valueTon };
         } else {
-            const selected = weightedRandom(NFT_GIFTS);
-            return { type:'nft', nftData:selected, icon:selected.icon, label:selected.name, image:selected.image, valueTon:selected.valueTon };
+            const n = weightedRandom(NFT_GIFTS);
+            return { type:'nft', nftData:n, icon:n.icon, label:n.name, image:n.image, valueTon:n.valueTon };
         }
     }
     
-    // Честный барабан
+    // Барабан
     function spinSlot(casePrice, onComplete) {
-        const slotTrack = document.getElementById('slotTrack');
-        const resultMsg = document.getElementById('slotResultMsg');
-        const modal = document.getElementById('slotModal');
-        let slotItems = [];
-        for (let i = 0; i < 35; i++) slotItems.push(generateRandomSlotItem(casePrice));
-        slotTrack.innerHTML = '';
-        slotItems.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'slot-item';
+        const track = document.getElementById('slotTrack'), msg = document.getElementById('slotResultMsg'), modal = document.getElementById('slotModal');
+        let items = []; for(let i=0;i<35;i++) items.push(generateRandomSlotItem(casePrice));
+        track.innerHTML = '';
+        items.forEach(item => {
+            const div = document.createElement('div'); div.className = 'slot-item';
             const imgHtml = item.image ? `<img src="${item.image}">` : `<div style="font-size:2.5rem;">${item.icon}</div>`;
             div.innerHTML = `<div class="slot-icon">${imgHtml}</div><div class="slot-label">${item.label}</div>`;
-            slotTrack.appendChild(div);
+            track.appendChild(div);
         });
-        const slotWidth = 116;
-        const containerWidth = document.querySelector('.slot-machine').clientWidth;
-        const extraSpin = 1600 + Math.random() * 1000;
-        const finalOffset = -extraSpin;
-        slotTrack.style.transition = 'none';
-        slotTrack.style.transform = 'translateX(0px)';
-        setTimeout(() => {
-            slotTrack.style.transition = 'transform cubic-bezier(0.1, 0.9, 0.2, 1.05) 2.8s';
-            slotTrack.style.transform = `translateX(${finalOffset}px)`;
-        }, 20);
-        modal.classList.add('active');
-        resultMsg.innerHTML = "🎰 Барабан крутится...";
-        const finishHandler = () => {
-            slotTrack.removeEventListener('transitionend', finishHandler);
-            const transform = slotTrack.style.transform;
-            const match = transform.match(/translateX\(([-\d.]+)px\)/);
-            if (!match) return;
-            let currentX = parseFloat(match[1]);
-            const firstSlot = slotTrack.children[0];
-            const itemWidth = firstSlot.offsetWidth + 16;
-            let bestIndex = 0, bestDistance = Infinity;
-            for (let i = 0; i < slotItems.length; i++) {
-                const slotCenter = currentX + i * itemWidth + itemWidth/2;
-                const distance = Math.abs(slotCenter - containerWidth/2);
-                if (distance < bestDistance) { bestDistance = distance; bestIndex = i; }
+        const slotW = 116, containerW = document.querySelector('.slot-machine').clientWidth, extra = 1600+Math.random()*1000;
+        track.style.transition = 'none'; track.style.transform = 'translateX(0px)';
+        setTimeout(() => { track.style.transition = 'transform cubic-bezier(0.1,0.9,0.2,1.05) 2.8s'; track.style.transform = `translateX(-${extra}px)`; }, 20);
+        modal.classList.add('active'); msg.innerHTML = "🎰 Барабан крутится...";
+        const finish = () => {
+            track.removeEventListener('transitionend', finish);
+            let curX = parseFloat(track.style.transform.match(/translateX\(([-\d.]+)px\)/)?.[1]||0);
+            let first = track.children[0], itemW = first.offsetWidth+16, bestIdx=0, bestDist=Infinity;
+            for(let i=0;i<items.length;i++) {
+                let center = curX + i*itemW + itemW/2;
+                let dist = Math.abs(center - containerW/2);
+                if(dist < bestDist) { bestDist = dist; bestIdx = i; }
             }
-            const wonItem = slotItems[bestIndex];
-            let rewardText = '', historyEntry = '';
-            if (wonItem.type === 'ton') {
-                addTonToUser(wonItem.value);
-                rewardText = `💰 Выигрыш: ${wonItem.value} TON`;
-                historyEntry = `🎲 Кейс за ${casePrice} TON → Выигрыш: ${wonItem.value} TON`;
-            } else if (wonItem.type === 'rare') {
-                addRareGiftToUser(wonItem.giftId);
-                rewardText = `🎁 Подарок: ${wonItem.giftName}`;
-                historyEntry = `🎲 Кейс за ${casePrice} TON → Подарок: ${wonItem.giftName}`;
-            } else {
-                addNftToUser(wonItem.nftData);
-                rewardText = `💎 NFT: ${wonItem.nftData.name}`;
-                historyEntry = `🎲 Кейс за ${casePrice} TON → NFT: ${wonItem.nftData.name}`;
-            }
-            resultMsg.innerHTML = rewardText;
-            addHistoryEntry(historyEntry);
-            updateBalanceUI();
-            if (onComplete) onComplete();
+            let won = items[bestIdx], rewardText='', hist='';
+            if(won.type === 'ton') { addTonToUser(won.value); rewardText=`💰 +${won.value} TON`; hist=`Кейс ${casePrice} TON → Выигрыш: ${won.value} TON`; }
+            else if(won.type === 'rare') { addRareGiftToUser(won.giftId); rewardText=`🎁 Подарок: ${won.giftName}`; hist=`Кейс ${casePrice} TON → Подарок: ${won.giftName}`; }
+            else { addNftToUser(won.nftData); rewardText=`💎 NFT: ${won.nftData.name}`; hist=`Кейс ${casePrice} TON → NFT: ${won.nftData.name}`; }
+            msg.innerHTML = rewardText; addHistoryEntry(hist); updateBalanceUI(); if(onComplete) onComplete();
         };
-        slotTrack.addEventListener('transitionend', finishHandler, { once: true });
-        setTimeout(() => finishHandler(), 3000);
+        track.addEventListener('transitionend', finish, { once: true });
+        setTimeout(finish, 3000);
     }
     
-    // Оплата кейса через TON Connect (прямая оплата)
-    async function payForCase(casePrice, onSuccess) {
-        if (!tonConnectUI) { alert("TON Connect не инициализирован"); return; }
-        const wallet = tonConnectUI.account;
-        if (!wallet) {
-           
-            await tonConnectUI.connectWallet();
-            if (!tonConnectUI.account) { alert("Не удалось подключить кошелёк"); return; }
-        }
-        const amountNano = (casePrice * 1e9).toString();
-        const transaction = {
-            validUntil: Math.floor(Date.now() / 1000) + 300,
-            messages: [{
-                address: PROJECT_WALLET_ADDRESS,
-                amount: amountNano,
-                payload: "Оплата кейса"
-            }]
-        };
+    // Оплата кейса через TON Connect
+    async function payForCase(price, onSuccess) {
+        if(!tonConnectUI) { alert("TON Connect не инициализирован"); return; }
+        let wallet = tonConnectUI.account;
+        if(!wallet) { await tonConnectUI.connectWallet(); wallet = tonConnectUI.account; if(!wallet) { alert("Подключите кошелёк"); return; } }
         try {
-            await tonConnectUI.sendTransaction(transaction);
+            await tonConnectUI.sendTransaction({ validUntil: Math.floor(Date.now()/1000)+300, messages: [{ address: PROJECT_WALLET_ADDRESS, amount: (price*1e9).toString() }] });
             onSuccess();
-        } catch (e) {
-            console.error(e);
-            alert("Оплата отклонена или ошибка");
-        }
+        } catch(e) { alert("Оплата отклонена"); }
     }
     
-    // Пополнение баланса через TON Connect
-    async function depositBalance(amountTon) {
-        if (!tonConnectUI) { alert("TON Connect не инициализирован"); return; }
-        const wallet = tonConnectUI.account;
-        if (!wallet) {
-            
-            await tonConnectUI.connectWallet();
-            if (!tonConnectUI.account) { alert("Не удалось подключить кошелёк"); return; }
-        }
-        const amountNano = (amountTon * 1e9).toString();
-        const transaction = {
-            validUntil: Math.floor(Date.now() / 1000) + 300,
-            messages: [{
-                address: PROJECT_WALLET_ADDRESS,
-                amount: amountNano,
-                payload: "Пополнение баланса"
-            }]
-        };
-        try {
-            await tonConnectUI.sendTransaction(transaction);
-            addTonToUser(amountTon);
-            alert(`✅ Баланс пополнен на ${amountTon} TON!`);
-            document.getElementById('depositModal').classList.remove('active');
-        } catch (e) {
-            console.error(e);
-            alert("Ошибка платежа или отмена");
-        }
-    }
-    
-    function openCase(caseObj) {
-        payForCase(caseObj.price, () => {
-            spinSlot(caseObj.price, () => {});
-        });
-    }
+    function openCase(caseObj) { payForCase(caseObj.price, () => spinSlot(caseObj.price, ()=>{})); }
     
     function renderCases() {
         const container = document.getElementById('casesContainer');
         container.innerHTML = '';
         CASES.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'case-item';
-            div.innerHTML = `
-                <div class="case-3d-icon">${c.icon}</div>
-                <div class="case-title">${c.name}</div>
-                <div class="case-price">${c.price} TON</div>
-                <div class="case-drops" onclick="alert('${c.name}\\nШансы: 60% TON, 25% редкий подарок, 15% NFT')">📋 Таблица дропов</div>
-                <button class="btn-open" data-id="${c.id}">ОТКРЫТЬ (${c.price} TON)</button>
-            `;
+            const div = document.createElement('div'); div.className = 'case-item';
+            div.innerHTML = `<div class="case-3d-icon">${c.icon}</div><div class="case-title">${c.name}</div><div class="case-price">${c.price} TON</div>
+                <div class="case-drops" onclick="alert('${c.name}\\n60% TON, 25% редкий, 15% NFT')">📋 Дропы</div>
+                <button class="btn-open" data-id="${c.id}">ОТКРЫТЬ (${c.price} TON)</button>`;
             container.appendChild(div);
         });
         document.querySelectorAll('.btn-open').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                const caseData = CASES.find(c => c.id === id);
-                if (caseData) openCase(caseData);
-            });
+            btn.addEventListener('click', e => { let id = parseInt(btn.dataset.id); let caseData = CASES.find(c=>c.id===id); if(caseData) openCase(caseData); });
         });
     }
     
@@ -667,63 +538,118 @@
         const container = document.getElementById('inventoryModalList');
         const user = getUserData();
         container.innerHTML = '';
-        for (const g of RARE_GIFTS) {
-            const count = user.inventory[g.id] || 0;
-            if (count > 0) {
-                const rarityClass = g.rarity === 'common' ? 'rarity-common' : (g.rarity === 'rare' ? 'rarity-rare' : (g.rarity === 'epic' ? 'rarity-epic' : 'rarity-legendary'));
-                const rarityName = { common:'Обычный', rare:'Редкий', epic:'Эпический', legendary:'Легендарный' }[g.rarity];
-                const imgHtml = g.image ? `<img src="${g.image}">` : `<div style="font-size:2rem;">${g.icon}</div>`;
-                container.innerHTML += `<div class="gift-card"><div class="gift-info"><div class="gift-icon">${imgHtml}</div><div class="gift-details"><div class="gift-name">${g.name}</div><div><span class="gift-rarity ${rarityClass}">${rarityName}</span></div><div class="gift-value">💰 ${g.valueTon} TON</div><div>📦 ${count}</div></div></div><div><button class="withdrawRareBtn" data-gift-id="${g.id}">ВЫВЕСТИ 1</button><button class="sellRareBtn" data-gift-id="${g.id}" data-value="${g.valueTon}">ПРОДАТЬ 1</button></div></div>`;
+        for(let g of RARE_GIFTS) {
+            let cnt = user.inventory[g.id] || 0;
+            if(cnt) {
+                let rarityClass = g.rarity==='common'?'rarity-common':(g.rarity==='rare'?'rarity-rare':(g.rarity==='epic'?'rarity-epic':'rarity-legendary'));
+                let rarityName = {common:'Обычный',rare:'Редкий',epic:'Эпический',legendary:'Легендарный'}[g.rarity];
+                let imgHtml = g.image ? `<img src="${g.image}">` : `<div style="font-size:2rem;">${g.icon}</div>`;
+                container.innerHTML += `<div class="gift-card"><div class="gift-info"><div class="gift-icon">${imgHtml}</div><div class="gift-details"><div class="gift-name">${g.name}</div><div><span class="gift-rarity ${rarityClass}">${rarityName}</span></div><div class="gift-value">💰 ${g.valueTon} TON</div><div>📦 ${cnt}</div></div></div><div><button class="withdrawRare" data-id="${g.id}">ВЫВЕСТИ 1</button><button class="sellRare" data-id="${g.id}" data-val="${g.valueTon}">ПРОДАТЬ 1</button></div></div>`;
             }
         }
-        user.inventory.nft.forEach((nft, idx) => {
-            const imgHtml = nft.image ? `<img src="${nft.image}">` : `<div style="font-size:2rem;">${nft.icon || '🏷️'}</div>`;
-            container.innerHTML += `<div class="gift-card"><div class="gift-info"><div class="gift-icon">${imgHtml}</div><div class="gift-details"><div class="gift-name">${nft.name}</div><div><span class="gift-rarity rarity-legendary">NFT</span></div><div class="gift-value">💰 ${nft.valueTon} TON</div></div></div><div><button class="withdrawNftBtn" data-idx="${idx}">ВЫВЕСТИ</button><button class="sellNftBtn" data-idx="${idx}" data-value="${nft.valueTon}">ПРОДАТЬ</button></div></div>`;
+        user.inventory.nft.forEach((nft,idx) => {
+            let imgHtml = nft.image ? `<img src="${nft.image}">` : `<div style="font-size:2rem;">${nft.icon||'🏷️'}</div>`;
+            container.innerHTML += `<div class="gift-card"><div class="gift-info"><div class="gift-icon">${imgHtml}</div><div class="gift-details"><div class="gift-name">${nft.name}</div><div><span class="gift-rarity rarity-legendary">NFT</span></div><div class="gift-value">💰 ${nft.valueTon} TON</div></div></div><div><button class="withdrawNft" data-idx="${idx}">ВЫВЕСТИ</button><button class="sellNft" data-idx="${idx}" data-val="${nft.valueTon}">ПРОДАТЬ</button></div></div>`;
         });
-        if (container.innerHTML === '') container.innerHTML = '<div style="padding:20px;">Нет подарков</div>';
-        
-        document.querySelectorAll('.withdrawRareBtn').forEach(btn => {
-            btn.addEventListener('click', () => { if(removeRareGift(btn.dataset.giftId)) { alert("Подарок отправлен"); renderInventoryModal(); } });
-        });
-        document.querySelectorAll('.sellRareBtn').forEach(btn => {
-            btn.addEventListener('click', () => { if(removeRareGift(btn.dataset.giftId)) { addTonToUser(parseFloat(btn.dataset.value)); alert("Продан"); renderInventoryModal(); } });
-        });
-        document.querySelectorAll('.withdrawNftBtn').forEach(btn => {
-            btn.addEventListener('click', () => { if(removeNftItem(parseInt(btn.dataset.idx))) { alert("NFT отправлен"); renderInventoryModal(); } });
-        });
-        document.querySelectorAll('.sellNftBtn').forEach(btn => {
-            btn.addEventListener('click', () => { if(removeNftItem(parseInt(btn.dataset.idx))) { addTonToUser(parseFloat(btn.dataset.value)); alert("Продан"); renderInventoryModal(); } });
-        });
+        if(container.innerHTML === '') container.innerHTML = '<div style="padding:20px;">Нет подарков</div>';
+        document.querySelectorAll('.withdrawRare').forEach(btn => btn.onclick = () => { if(removeRareGift(btn.dataset.id)) { alert("Подарок отправлен"); renderInventoryModal(); } });
+        document.querySelectorAll('.sellRare').forEach(btn => btn.onclick = () => { if(removeRareGift(btn.dataset.id)) { addTonToUser(parseFloat(btn.dataset.val)); alert("Продан"); renderInventoryModal(); } });
+        document.querySelectorAll('.withdrawNft').forEach(btn => btn.onclick = () => { if(removeNftItem(parseInt(btn.dataset.idx))) { alert("NFT отправлен"); renderInventoryModal(); } });
+        document.querySelectorAll('.sellNft').forEach(btn => btn.onclick = () => { if(removeNftItem(parseInt(btn.dataset.idx))) { addTonToUser(parseFloat(btn.dataset.val)); alert("Продан"); renderInventoryModal(); } });
     }
     
-    // Модалка пополнения
+    // Пополнение TON Connect
     let selectedAmount = null;
+    async function depositBalance(amount) {
+        if(!tonConnectUI) { alert("Инициализация..."); return; }
+        let wallet = tonConnectUI.account;
+        if(!wallet) { await tonConnectUI.connectWallet(); wallet = tonConnectUI.account; if(!wallet) { alert("Подключите кошелёк"); return; } }
+        try {
+            await tonConnectUI.sendTransaction({ validUntil: Math.floor(Date.now()/1000)+300, messages: [{ address: PROJECT_WALLET_ADDRESS, amount: (amount*1e9).toString() }] });
+            addTonToUser(amount);
+            alert(`✅ Баланс пополнен на ${amount} TON!`);
+            document.getElementById('depositModal').classList.remove('active');
+        } catch(e) { alert("Ошибка платежа"); }
+    }
     function showDepositModal() {
         document.getElementById('depositModal').classList.add('active');
-        // выбор суммы
         document.querySelectorAll('.amount-btn').forEach(btn => {
-            btn.classList.remove('active');
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedAmount = parseFloat(btn.dataset.amount);
-                document.getElementById('customAmount').value = '';
-            });
+            btn.onclick = () => { document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); selectedAmount = parseFloat(btn.dataset.amount); document.getElementById('customAmount').value = ''; };
         });
-        document.getElementById('customAmount').addEventListener('input', (e) => {
-            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
-            selectedAmount = parseFloat(e.target.value);
-            if (isNaN(selectedAmount)) selectedAmount = null;
-        });
+        document.getElementById('customAmount').oninput = (e) => { document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('active')); selectedAmount = parseFloat(e.target.value); if(isNaN(selectedAmount)) selectedAmount=null; };
         document.getElementById('confirmDepositBtn').onclick = async () => {
-            let amount = selectedAmount;
-            if (!amount || amount <= 0) {
-                const custom = parseFloat(document.getElementById('customAmount').value);
-                if (!isNaN(custom) && custom > 0) amount = custom;
-            }
-            if (!amount || amount <= 0) { alert("Выберите сумму"); return; }
-            await depositBalance(amount);
+            let amt = selectedAmount;
+            if(!amt || amt<=0) { let custom = parseFloat(document.getElementById('customAmount').value); if(!isNaN(custom) && custom>0) amt=custom; }
+            if(!amt || amt<=0) { alert("Выберите сумму"); return; }
+            await depositBalance(amt);
         };
+    }
+    
+    // Симуляция пополнения через банк подарков
+    function simulateBankDeposit() {
+        // Добавляем случайный редкий подарок в инвентарь и начисляем баланс
+        const randomGift = RARE_GIFTS[Math.floor(Math.random() * RARE_GIFTS.length)];
+        addRareGiftToUser(randomGift.id);
+        const bonusTon = 2.5 + Math.random() * 1.5;
+        addTonToUser(Math.round(bonusTon * 100) / 100);
+        alert(`✅ Вы отправили подарок в банк! Получено ${randomGift.name} в инвентарь и +${bonusTon.toFixed(2)} TON на баланс.`);
+        document.getElementById('depositModal').classList.remove('active');
+    }
+    
+    // АДМИНКА: загрузка фото
+    function renderAdminPanel() {
+        const container = document.getElementById('adminItemsList');
+        container.innerHTML = '<h4>Редкие подарки</h4>';
+        RARE_GIFTS.forEach((item, idx) => {
+            const imgHtml = item.image ? `<img src="${item.image}" style="max-width:40px;">` : 'нет фото';
+            container.innerHTML += `
+                <div class="admin-item-row">
+                    <div style="min-width:120px;">${item.icon} ${item.name} (${item.valueTon} TON)</div>
+                    <div class="image-preview">${imgHtml}</div>
+                    <input type="file" accept="image/*" data-type="rare" data-idx="${idx}" class="adminImageInput">
+                    <button class="clearImageBtn" data-type="rare" data-idx="${idx}">🗑️</button>
+                </div>
+            `;
+        });
+        container.innerHTML += '<h4>NFT подарки</h4>';
+        NFT_GIFTS.forEach((item, idx) => {
+            const imgHtml = item.image ? `<img src="${item.image}" style="max-width:40px;">` : 'нет фото';
+            container.innerHTML += `
+                <div class="admin-item-row">
+                    <div style="min-width:120px;">${item.icon} ${item.name} (${item.valueTon} TON)</div>
+                    <div class="image-preview">${imgHtml}</div>
+                    <input type="file" accept="image/*" data-type="nft" data-idx="${idx}" class="adminImageInput">
+                    <button class="clearImageBtn" data-type="nft" data-idx="${idx}">🗑️</button>
+                </div>
+            `;
+        });
+        document.querySelectorAll('.adminImageInput').forEach(input => {
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const base64 = ev.target.result;
+                    const type = input.dataset.type, idx = parseInt(input.dataset.idx);
+                    if(type === 'rare') RARE_GIFTS[idx].image = base64;
+                    else NFT_GIFTS[idx].image = base64;
+                    saveItemsConfig();
+                    renderAdminPanel();
+                    alert('Фото сохранено!');
+                };
+                reader.readAsDataURL(file);
+            };
+        });
+        document.querySelectorAll('.clearImageBtn').forEach(btn => {
+            btn.onclick = () => {
+                const type = btn.dataset.type, idx = parseInt(btn.dataset.idx);
+                if(type === 'rare') RARE_GIFTS[idx].image = null;
+                else NFT_GIFTS[idx].image = null;
+                saveItemsConfig();
+                renderAdminPanel();
+                alert('Фото удалено');
+            };
+        });
     }
     
     function init() {
@@ -732,111 +658,35 @@
         loadAllData();
         initCurrentUser();
         renderCases();
-        updateBalanceUI();  
-        // Админ-панель
-    function renderAdminItemsPanel() {
-        const container = document.getElementById('adminItemsList');
-        container.innerHTML = '<h4>Редкие подарки</h4>';
-        RARE_GIFTS.forEach((item, idx) => {
-            const imgHtml = item.image ? `<img src="${item.image}" style="max-width:40px; max-height:40px;">` : 'нет фото';
-            container.innerHTML += `
-                <div class="admin-item-row">
-                    <div style="min-width:120px;">${item.icon} ${item.name} (${item.valueTon} TON)</div>
-                    <div class="image-preview">${imgHtml}</div>
-                    <input type="file" accept="image/*" data-type="rare" data-idx="${idx}" class="adminImageInput">
-                    <button class="clearImageBtn" data-type="rare" data-idx="${idx}">🗑️ очистить</button>
-                </div>
-            `;
-        });
-        container.innerHTML += '<h4 style="margin-top:16px;">NFT подарки</h4>';
-        NFT_GIFTS.forEach((item, idx) => {
-            const imgHtml = item.image ? `<img src="${item.image}" style="max-width:40px; max-height:40px;">` : 'нет фото';
-            container.innerHTML += `
-                <div class="admin-item-row">
-                    <div style="min-width:120px;">${item.icon} ${item.name} (${item.valueTon} TON)</div>
-                    <div class="image-preview">${imgHtml}</div>
-                    <input type="file" accept="image/*" data-type="nft" data-idx="${idx}" class="adminImageInput">
-                    <button class="clearImageBtn" data-type="nft" data-idx="${idx}">🗑️ очистить</button>
-                </div>
-            `;
-        });
-        document.querySelectorAll('.adminImageInput').forEach(input => {
-            input.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    const base64 = ev.target.result;
-                    const type = input.getAttribute('data-type');
-                    const idx = parseInt(input.getAttribute('data-idx'));
-                    if (type === 'rare') {
-                        RARE_GIFTS[idx].image = base64;
-                    } else {
-                        NFT_GIFTS[idx].image = base64;
-                    }
-                    saveItemsConfig();
-                    renderAdminItemsPanel();
-                    alert('Фото сохранено!');
-                };
-                reader.readAsDataURL(file);
-            });
-        });
-        document.querySelectorAll('.clearImageBtn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const type = btn.getAttribute('data-type');
-                const idx = parseInt(btn.getAttribute('data-idx'));
-                if (type === 'rare') {
-                    RARE_GIFTS[idx].image = null;
-                } else {
-                    NFT_GIFTS[idx].image = null;
-                }
-                saveItemsConfig();
-                renderAdminItemsPanel();
-                alert('Фото удалено');
-            });
-        });
-    }
-
-    function init() {
-        initGiftsArrays();
-        loadAllData();
-        initCurrentUser();
-        renderCases();
         updateBalanceUI();
-
-        document.getElementById('plusBalanceBtn').onclick = () => document.getElementById('depositInfoModal').classList.add('active');
-        document.getElementById('closeDepositInfoBtn').onclick = () => document.getElementById('depositInfoModal').classList.remove('active');
-        document.getElementById('goToBankBtn').onclick = () => window.open('https://t.me/riskgift_bank', '_blank');
         
-        const inventoryModal = document.getElementById('inventoryModal');
-        document.getElementById('inventoryMainBtn').onclick = () => {
-            renderInventoryModal();
-            inventoryModal.classList.add('active');
-        };
-        document.getElementById('closeInventoryModalBtn').onclick = () => inventoryModal.classList.remove('active');
+        document.getElementById('plusBalanceBtn').onclick = showDepositModal;
+        document.getElementById('closeDepositModalBtn').onclick = () => document.getElementById('depositModal').classList.remove('active');
+        document.getElementById('simulateBankDeposit').onclick = simulateBankDeposit;
+        document.getElementById('goToBankBtn').onclick = () => window.open('https://t.me/riskgift_bank', '_blank');
+        document.getElementById('inventoryMainBtn').onclick = () => { renderInventoryModal(); document.getElementById('inventoryModal').classList.add('active'); };
+        document.getElementById('closeInventoryModalBtn').onclick = () => document.getElementById('inventoryModal').classList.remove('active');
         document.getElementById('closeSlotBtn').onclick = () => document.getElementById('slotModal').classList.remove('active');
         
+        // Админка
+        const adminModal = document.getElementById('adminModal');
         const adminCodeModal = document.getElementById('adminCodeModal');
-        const adminPanelModal = document.getElementById('adminPanelModal');
         document.getElementById('adminAccessBtn').onclick = () => adminCodeModal.classList.add('active');
-        document.getElementById('closeAdminCodeModalBtn').onclick = () => adminCodeModal.classList.remove('active');
+        document.getElementById('closeAdminCodeBtn').onclick = () => adminCodeModal.classList.remove('active');
         document.getElementById('submitAdminCodeBtn').onclick = () => {
             const code = document.getElementById('adminCodeInput').value;
-            if (code === ADMIN_CODE) {
+            if(code === 'admin2025') {
                 adminCodeModal.classList.remove('active');
-                renderAdminItemsPanel();
-                adminPanelModal.classList.add('active');
-            } else {
-                alert('Неверный код');
-            }
+                renderAdminPanel();
+                adminModal.classList.add('active');
+            } else alert('Неверный код');
             document.getElementById('adminCodeInput').value = '';
         };
-        document.getElementById('closeAdminPanelBtn').onclick = () => adminPanelModal.classList.remove('active');
+        document.getElementById('closeAdminBtn').onclick = () => adminModal.classList.remove('active');
     }
     init();
 </script>
-        
-     
+
 
 </div>
 </body>
