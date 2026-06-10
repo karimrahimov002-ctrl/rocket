@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Riskgift — честный барабан + продажа предметов</title>
+    <title>Riskgift — точные цены, честные шансы, 1 предмет за раз</title>
     <style>
         * {
             margin: 0;
@@ -337,7 +337,7 @@
     </div>
 </div>
 
-<!-- МОДАЛКА ИНВЕНТАРЯ (с кнопкой Продать) -->
+<!-- МОДАЛКА ИНВЕНТАРЯ -->
 <div id="inventoryModal" class="modal">
     <div class="modal-content" style="max-width: 600px;">
         <h3>📦 ВСЕ ВАШИ ПОДАРКИ И NFT</h3>
@@ -346,7 +346,7 @@
     </div>
 </div>
 
-<!-- МОДАЛКА АДМИНКИ (код + загрузчик фото) -->
+<!-- МОДАЛКА АДМИНКИ -->
 <div id="adminCodeModal" class="modal">
     <div class="modal-content">
         <h3>🔐 АДМИН-ПАНЕЛЬ</h3>
@@ -368,7 +368,7 @@
 </div>
 
 <script>
-    // ========== КОНФИГУРАЦИЯ ==========
+    // ========== КОНФИГУРАЦИЯ С НОВЫМИ ЦЕНАМИ И ВЕСАМИ ==========
     const ADMIN_CODE = "admin2025";
 
     const CASES = [
@@ -382,45 +382,74 @@
         { id:17, name:"Golden Era", price:25, icon:"🏆", drops:["3-13 TON","Гарант NFT 15%"] }
     ];
 
+    // Редкие подарки с новыми ценами и весами (чем выше цена, тем меньше вес)
+    const RARE_GIFTS_DATA = [
+        { id:"xmas", name:"Xmas Stocking", icon:"🧦", rarity:"rare", valueTon:2.2, weight:40 },
+        { id:"clover", name:"Clover Pin", icon:"🍀", rarity:"rare", valueTon:3.4, weight:25 },
+        { id:"tama", name:"Tama Gadget", icon:"📟", rarity:"epic", valueTon:2.6, weight:35 },
+        { id:"lol", name:"Lol Pop", icon:"😂", rarity:"rare", valueTon:2.4, weight:38 },
+        { id:"ice", name:"Ice Cream", icon:"🍦", rarity:"common", valueTon:2.4, weight:38 },
+        { id:"snoop", name:"Snoop Dogg", icon:"🐶", rarity:"legendary", valueTon:4.8, weight:12 },
+        // дополнительные из старого списка (оставляем для баланса, но с низкими весами)
+        { id:"calendar", name:"Desk Calendar", icon:"📅", rarity:"common", valueTon:4.2, weight:18 },
+        { id:"golden", name:"Golden Ticket", icon:"🎫", rarity:"epic", valueTon:1.2, weight:50 },
+        { id:"dragon", name:"Dragon Scale", icon:"🐉", rarity:"legendary", valueTon:2.0, weight:30 },
+        { id:"phoenix", name:"Phoenix Feather", icon:"🔥", rarity:"legendary", valueTon:2.5, weight:28 },
+        { id:"crystal", name:"Crystal Heart", icon:"💎", rarity:"epic", valueTon:1.8, weight:32 }
+    ];
+
+    // NFT с новыми ценами и весами
+    const NFT_GIFTS_DATA = [
+        { name:"Mad Pumpkin", valueTon:9.1, icon:"🎃", weight:45 },
+        { name:"Eternal Rose", valueTon:17.9, icon:"🌹", weight:25 },
+        { name:"Voodoo Doll", valueTon:28.4, icon:"🪆", weight:12 },
+        { name:"Kissed Frog", valueTon:36.1, icon:"🐸", weight:8 },
+        // дополнительные для разнообразия с низкими весами
+        { name:"⭐ NFT Star", valueTon:5.0, icon:"⭐", weight:55 },
+        { name:"🔴 Red Diamond", valueTon:8.5, icon:"💎", weight:48 },
+        { name:"💠 Neon Vortex", valueTon:12.0, icon:"🌀", weight:35 },
+        { name:"👾 Alien Artifact", valueTon:19.5, icon:"👾", weight:20 },
+        { name:"🌙 Lunar Token", valueTon:22.0, icon:"🌙", weight:18 },
+        { name:"Sharp Tongue", valueTon:34.6, icon:"👅", weight:10 }
+    ];
+
     let RARE_GIFTS = [];
     let NFT_GIFTS = [];
 
+    // Функция для выбора случайного элемента с учётом весов
+    function weightedRandom(items) {
+        let totalWeight = items.reduce((sum, item) => sum + (item.weight || 1), 0);
+        let rand = Math.random() * totalWeight;
+        let accum = 0;
+        for (let item of items) {
+            accum += (item.weight || 1);
+            if (rand < accum) return item;
+        }
+        return items[0];
+    }
+
     function initGiftsArrays() {
-        const defaultRare = [
-            { id:"xmas", name:"Xmas Stocking", icon:"🧦", rarity:"rare", valueTon:0.5, image:null },
-            { id:"clover", name:"Clover Pin", icon:"🍀", rarity:"rare", valueTon:0.4, image:null },
-            { id:"tama", name:"Tama Gadget", icon:"📟", rarity:"epic", valueTon:0.6, image:null },
-            { id:"calendar", name:"Desk Calendar", icon:"📅", rarity:"common", valueTon:0.35, image:null },
-            { id:"lol", name:"Lol Pop", icon:"😂", rarity:"rare", valueTon:0.45, image:null },
-            { id:"ice", name:"Ice Cream", icon:"🍦", rarity:"common", valueTon:0.55, image:null },
-            { id:"snoop", name:"Snoop Dogg", icon:"🐶", rarity:"legendary", valueTon:0.8, image:null },
-            { id:"golden", name:"Golden Ticket", icon:"🎫", rarity:"epic", valueTon:1.2, image:null },
-            { id:"dragon", name:"Dragon Scale", icon:"🐉", rarity:"legendary", valueTon:2.0, image:null },
-            { id:"phoenix", name:"Phoenix Feather", icon:"🔥", rarity:"legendary", valueTon:2.5, image:null },
-            { id:"crystal", name:"Crystal Heart", icon:"💎", rarity:"epic", valueTon:1.8, image:null }
-        ];
-        const defaultNFT = [
-            { name:"Mad Pumpkin", valueTon:9.2, icon:"🎃", image:null },
-            { name:"Eternal Rose", valueTon:17.3, icon:"🌹", image:null },
-            { name:"Voodoo Doll", valueTon:26.3, icon:"🪆", image:null },
-            { name:"Sharp Tongue", valueTon:34.6, icon:"👅", image:null },
-            { name:"Kissed Frog", valueTon:36.0, icon:"🐸", image:null },
-            { name:"⭐ NFT Star", valueTon:2, icon:"⭐", image:null },
-            { name:"🔴 Red Diamond", valueTon:0.2, icon:"💎", image:null },
-            { name:"💠 Neon Vortex", valueTon:1.0, icon:"🌀", image:null },
-            { name:"👾 Alien Artifact", valueTon:0.9, icon:"👾", image:null },
-            { name:"🌙 Lunar Token", valueTon:0.4, icon:"🌙", image:null }
-        ];
+        // Копируем данные, добавляем поле image
+        RARE_GIFTS = RARE_GIFTS_DATA.map(g => ({ ...g, image: null }));
+        NFT_GIFTS = NFT_GIFTS_DATA.map(n => ({ ...n, image: null }));
+        
         const saved = localStorage.getItem('riskgift_items_config');
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                RARE_GIFTS = data.rareGifts;
-                NFT_GIFTS = data.nftGifts;
+                // восстанавливаем картинки, если есть
+                if (data.rareGifts) {
+                    data.rareGifts.forEach((savedItem, idx) => {
+                        if (RARE_GIFTS[idx]) RARE_GIFTS[idx].image = savedItem.image;
+                    });
+                }
+                if (data.nftGifts) {
+                    data.nftGifts.forEach((savedItem, idx) => {
+                        if (NFT_GIFTS[idx]) NFT_GIFTS[idx].image = savedItem.image;
+                    });
+                }
             } catch(e) {}
         }
-        if (!RARE_GIFTS || RARE_GIFTS.length === 0) RARE_GIFTS = defaultRare;
-        if (!NFT_GIFTS || NFT_GIFTS.length === 0) NFT_GIFTS = defaultNFT;
         saveItemsConfig();
     }
     function saveItemsConfig() {
@@ -440,7 +469,7 @@
     }
 
     function loadAllData() {
-        const saved = localStorage.getItem('riskgift_allusers_v14');
+        const saved = localStorage.getItem('riskgift_allusers_v15');
         if (saved) {
             try {
                 const data = JSON.parse(saved);
@@ -452,7 +481,7 @@
         }
     }
     function saveAllData() {
-        localStorage.setItem('riskgift_allusers_v14', JSON.stringify({ allUsers: allUsersData }));
+        localStorage.setItem('riskgift_allusers_v15', JSON.stringify({ allUsers: allUsersData }));
     }
 
     function initCurrentUser() {
@@ -492,6 +521,7 @@
         saveAllData();
     }
 
+    // Добавление ровно одного экземпляра
     function addRareGiftToUser(giftId) {
         const user = getUserData();
         user.inventory[giftId] = (user.inventory[giftId] || 0) + 1;
@@ -526,7 +556,7 @@
         return false;
     }
 
-    // Генерация случайного набора слотов (без привязки к выигрышу)
+    // Генерация случайного слота для барабана с весами
     function generateRandomSlotItem(casePrice) {
         const r = Math.random();
         if (r < 0.6) { // TON
@@ -534,14 +564,12 @@
             let winTon = casePrice * percent;
             winTon = Math.round(winTon * 1000) / 1000;
             return { type:'ton', value:winTon, icon:'💰', label:`${winTon.toFixed(3)} TON`, image:null };
-        } else if (r < 0.85) { // редкий подарок
-            const idx = Math.floor(Math.random() * RARE_GIFTS.length);
-            const g = RARE_GIFTS[idx];
-            return { type:'rare', giftId:g.id, giftName:g.name, icon:g.icon, label:g.name, image:g.image, valueTon:g.valueTon };
-        } else { // NFT
-            const idx = Math.floor(Math.random() * NFT_GIFTS.length);
-            const n = NFT_GIFTS[idx];
-            return { type:'nft', nftData:n, icon:n.icon, label:n.name, image:n.image, valueTon:n.valueTon };
+        } else if (r < 0.85) { // редкий подарок (25%)
+            const selected = weightedRandom(RARE_GIFTS);
+            return { type:'rare', giftId:selected.id, giftName:selected.name, icon:selected.icon, label:selected.name, image:selected.image, valueTon:selected.valueTon };
+        } else { // NFT (15%)
+            const selected = weightedRandom(NFT_GIFTS);
+            return { type:'nft', nftData:selected, icon:selected.icon, label:selected.name, image:selected.image, valueTon:selected.valueTon };
         }
     }
 
@@ -557,7 +585,6 @@
             slotItems.push(generateRandomSlotItem(casePrice));
         }
         
-        // Отрисовка
         slotTrack.innerHTML = '';
         slotItems.forEach(item => {
             const div = document.createElement('div');
@@ -570,13 +597,10 @@
             slotTrack.appendChild(div);
         });
         
-        // Определяем размеры для центрирования
-        const slotWidth = 116; // ширина + gap
+        const slotWidth = 116;
         const containerWidth = document.querySelector('.slot-machine').clientWidth;
         const startOffset = containerWidth / 2 - slotWidth / 2;
-        // Случайное смещение для вращения
         const extraSpin = 1600 + Math.random() * 1000;
-        // Мы не задаём targetIndex заранее, просто делаем большой прокрут
         const finalOffset = -extraSpin;
         
         slotTrack.style.transition = 'none';
@@ -591,17 +615,12 @@
         
         const finishHandler = () => {
             slotTrack.removeEventListener('transitionend', finishHandler);
-            // Определяем индекс слота, который находится в центре
             const transform = slotTrack.style.transform;
             const match = transform.match(/translateX\(([-\d.]+)px\)/);
             if (!match) return;
             let currentX = parseFloat(match[1]);
-            // Получаем ширину одного слота
             const firstSlot = slotTrack.children[0];
-            const itemWidth = firstSlot.offsetWidth + 16; // ширина + gap
-            // Вычисляем, какой индекс находится в центре
-            // Центр контейнера = containerWidth/2
-            // Смещение слота = currentX + i * itemWidth + itemWidth/2
+            const itemWidth = firstSlot.offsetWidth + 16;
             let bestIndex = 0;
             let bestDistance = Infinity;
             for (let i = 0; i < slotItems.length; i++) {
@@ -615,7 +634,6 @@
             const wonItem = slotItems[bestIndex];
             let rewardText = '';
             let historyEntry = '';
-            // Начисляем выигрыш
             if (wonItem.type === 'ton') {
                 addTonToUser(wonItem.value);
                 rewardText = `💰 Выигрыш: ${wonItem.value} TON зачислен на баланс!`;
@@ -657,7 +675,7 @@
                 <div class="case-3d-icon">${c.icon}</div>
                 <div class="case-title">${c.name}</div>
                 <div class="case-price">${c.price} TON</div>
-                <div class="case-drops" onclick="alert('${c.name}\\nВозможные выигрыши:\\n${c.drops.join('\\n')}\\n\\n60% TON\\n25% редкий подарок\\n15% NFT')">📋 Таблица дропов</div>
+                <div class="case-drops" onclick="alert('${c.name}\\nВозможные выигрыши:\\n${c.drops.join('\\n')}\\n\\n60% TON\\n25% редкий подарок (шанс зависит от цены)\\n15% NFT (шанс зависит от цены)')">📋 Таблица дропов</div>
                 <button class="btn-open" data-id="${c.id}">ОТКРЫТЬ</button>
             `;
             container.appendChild(div);
@@ -671,7 +689,7 @@
         });
     }
 
-    // Инвентарь с кнопками "Вывести" и "Продать"
+    // Инвентарь с кнопками "Вывести" и "Продать" (каждый предмет отображается один раз)
     function renderInventoryModal() {
         const container = document.getElementById('inventoryModalList');
         const user = getUserData();
@@ -681,27 +699,30 @@
             if (count > 0) {
                 const rarityClass = g.rarity === 'common' ? 'rarity-common' : (g.rarity === 'rare' ? 'rarity-rare' : (g.rarity === 'epic' ? 'rarity-epic' : 'rarity-legendary'));
                 const rarityName = { common:'Обычный', rare:'Редкий', epic:'Эпический', legendary:'Легендарный' }[g.rarity];
-                for (let i = 0; i < count; i++) {
-                    const imgHtml = g.image ? `<img src="${g.image}">` : `<div style="font-size:2rem;">${g.icon}</div>`;
-                    container.innerHTML += `
-                        <div class="gift-card">
-                            <div class="gift-info">
-                                <div class="gift-icon">${imgHtml}</div>
-                                <div class="gift-details">
-                                    <div class="gift-name">${g.name}</div>
-                                    <div><span class="gift-rarity ${rarityClass}">${rarityName}</span></div>
-                                    <div class="gift-value">💰 ~${g.valueTon} TON</div>
-                                </div>
-                            </div>
-                            <div>
-                                <button class="withdrawFromInventoryBtn" data-gift-type="rare" data-gift-id="${g.id}">ВЫВЕСТИ</button>
-                                <button class="sellFromInventoryBtn" data-gift-type="rare" data-gift-id="${g.id}" data-value="${g.valueTon}">ПРОДАТЬ</button>
+                // Показываем количество, но каждая копия — отдельная карточка? Нет, показываем строку с количеством и кнопками "Вывести" и "Продать" для всего количества.
+                // Но по логике, если у пользователя несколько одинаковых, то кнопка "Вывести" должна выводить 1 штуку.
+                // Сделаем так: для каждого предмета отображаем одну строку с количеством и кнопки "Вывести 1" и "Продать 1".
+                const imgHtml = g.image ? `<img src="${g.image}">` : `<div style="font-size:2rem;">${g.icon}</div>`;
+                container.innerHTML += `
+                    <div class="gift-card">
+                        <div class="gift-info">
+                            <div class="gift-icon">${imgHtml}</div>
+                            <div class="gift-details">
+                                <div class="gift-name">${g.name}</div>
+                                <div><span class="gift-rarity ${rarityClass}">${rarityName}</span></div>
+                                <div class="gift-value">💰 ${g.valueTon} TON</div>
+                                <div class="gift-value">📦 Количество: ${count}</div>
                             </div>
                         </div>
-                    `;
-                }
+                        <div>
+                            <button class="withdrawFromInventoryBtn" data-gift-type="rare" data-gift-id="${g.id}">ВЫВЕСТИ 1</button>
+                            <button class="sellFromInventoryBtn" data-gift-type="rare" data-gift-id="${g.id}" data-value="${g.valueTon}">ПРОДАТЬ 1</button>
+                        </div>
+                    </div>
+                `;
             }
         }
+        // NFT — каждый экземпляр показываем отдельно, потому что они уникальны
         user.inventory.nft.forEach((nft, idx) => {
             const imgHtml = nft.image ? `<img src="${nft.image}">` : `<div style="font-size:2rem;">${nft.icon || '🏷️'}</div>`;
             container.innerHTML += `
@@ -732,7 +753,7 @@
                     if (removeRareGift(giftId)) {
                         alert(`✅ Подарок отправлен в Telegram!`);
                         renderInventoryModal();
-                    }
+                    } else alert('Нет такого подарка');
                 } else if (type === 'nft') {
                     const idx = parseInt(btn.getAttribute('data-idx'));
                     if (removeNftItem(idx)) {
@@ -753,7 +774,7 @@
                         addTonToUser(value);
                         alert(`💰 Вы продали предмет за ${value.toFixed(2)} TON!`);
                         renderInventoryModal();
-                    }
+                    } else alert('Нет такого подарка');
                 } else if (type === 'nft') {
                     const idx = parseInt(btn.getAttribute('data-idx'));
                     if (removeNftItem(idx)) {
@@ -774,7 +795,7 @@
             const imgHtml = item.image ? `<img src="${item.image}" style="max-width:40px; max-height:40px;">` : 'нет фото';
             container.innerHTML += `
                 <div class="admin-item-row">
-                    <div style="min-width:120px;">${item.icon} ${item.name}</div>
+                    <div style="min-width:120px;">${item.icon} ${item.name} (${item.valueTon} TON)</div>
                     <div class="image-preview">${imgHtml}</div>
                     <input type="file" accept="image/*" data-type="rare" data-idx="${idx}" class="adminImageInput">
                     <button class="clearImageBtn" data-type="rare" data-idx="${idx}">🗑️ очистить</button>
@@ -786,7 +807,7 @@
             const imgHtml = item.image ? `<img src="${item.image}" style="max-width:40px; max-height:40px;">` : 'нет фото';
             container.innerHTML += `
                 <div class="admin-item-row">
-                    <div style="min-width:120px;">${item.icon} ${item.name}</div>
+                    <div style="min-width:120px;">${item.icon} ${item.name} (${item.valueTon} TON)</div>
                     <div class="image-preview">${imgHtml}</div>
                     <input type="file" accept="image/*" data-type="nft" data-idx="${idx}" class="adminImageInput">
                     <button class="clearImageBtn" data-type="nft" data-idx="${idx}">🗑️ очистить</button>
