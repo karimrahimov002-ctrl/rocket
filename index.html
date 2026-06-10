@@ -279,7 +279,7 @@
         <div id="tonConnectButton"></div>
     </div>
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-        <h2>⚡ КЕЙСЫ (до 25 TON)</h2>
+        <h2>⚡ КЕЙСЫ </h2>
         <button id="goToBankBtn" style="background: #2a2e4a; font-size: 0.7rem;">🏦 Банк подарков</button>
     </div>
     
@@ -302,6 +302,7 @@
 <div id="depositModal" class="modal">
     <div class="modal-content">
         <h3>💰 ПОПОЛНЕНИЕ БАЛАНСА</h3>
+       <p style="margin: 16px 0;">Отправьте любой ваш подарок в банк подарков <strong>@riskgift_bank</strong><br>После отправки вам начислят баланс, а подарок появится в инвентаре.</p> 
         <p>Выберите сумму (TON):</p>
         <div class="amount-select" id="amountSelect">
             <div class="amount-btn" data-amount="1">1 TON</div>
@@ -312,9 +313,9 @@
             <div class="amount-btn" data-amount="100">100 TON</div>
         </div>
         <div style="margin: 12px 0;">
-            <input type="number" id="customAmount" class="custom-amount" placeholder="Своя сумма" min="1" step="1">
+            <input type="number" id="customAmount" class="custom-amount" placeholder="Своя сумма" min="0.1" step="1">
         </div>
-        <button id="confirmDepositBtn" class="ton-connect-btn" style="background: #0a6cff; margin-top: 10px;">💎 Пополнить через TON Connect</button>
+        <button id="confirmDepositBtn" class="ton-connect-btn" style="background: #0a6cff; margin-top: 10px;">💎 Пополнить через TON </button>
         <button id="closeDepositModalBtn" class="close-btn" style="margin-top: 16px;">Закрыть</button>
     </div>
 </div>
@@ -331,7 +332,8 @@
 <script>
     // ========== НАСТРОЙКИ TON CONNECT ==========
     // !!! ВСТАВЬТЕ ВАШ РЕАЛЬНЫЙ АДРЕС КОШЕЛЬКА ДЛЯ ПРИЁМА TON !!!
-    const PROJECT_WALLET_ADDRESS = "EQD..."; // ЗАМЕНИТЕ НА ВАШ АДРЕС
+    const PROJECT_WALLET_ADDRESS = "UQAtQAePeh8BtF7blalA1z-ARWr3rH2EHNc4CKWuDlhuGuoT
+"; // ЗАМЕНИТЕ НА ВАШ АДРЕС
     
     // Манифест для TON Connect (можно разместить на своём сайте, но для демо используем публичный)
     const MANIFEST_URL = "https://raw.githubusercontent.com/ton-connect/demo-dapp/main/manifest.json";
@@ -580,7 +582,7 @@
         if (!tonConnectUI) { alert("TON Connect не инициализирован"); return; }
         const wallet = tonConnectUI.account;
         if (!wallet) {
-            alert("Сначала подключите кошелёк через кнопку сверху");
+         
             await tonConnectUI.connectWallet();
             if (!tonConnectUI.account) { alert("Не удалось подключить кошелёк"); return; }
         }
@@ -590,7 +592,7 @@
             messages: [{
                 address: PROJECT_WALLET_ADDRESS,
                 amount: amountNano,
-                payload: "Оплата кейса"
+                
             }]
         };
         try {
@@ -607,7 +609,7 @@
         if (!tonConnectUI) { alert("TON Connect не инициализирован"); return; }
         const wallet = tonConnectUI.account;
         if (!wallet) {
-            alert("Сначала подключите кошелёк через кнопку сверху");
+        
             await tonConnectUI.connectWallet();
             if (!tonConnectUI.account) { alert("Не удалось подключить кошелёк"); return; }
         }
