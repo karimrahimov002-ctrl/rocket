@@ -331,7 +331,8 @@
 <script>
     // ========== НАСТРОЙКИ TON CONNECT ==========
     // !!! ВСТАВЬТЕ ВАШ РЕАЛЬНЫЙ АДРЕС КОШЕЛЬКА ДЛЯ ПРИЁМА TON !!!
-    const PROJECT_WALLET_ADDRESS = "EQD..."; // ЗАМЕНИТЕ НА ВАШ АДРЕС
+    const PROJECT_WALLET_ADDRESS = "UQAtQAePeh8BtF7blalA1z-ARWr3rH2EHNc4CKWuDlhuGuoT
+"; // ЗАМЕНИТЕ НА ВАШ АДРЕС
     
     // Манифест для TON Connect (можно разместить на своём сайте, но для демо используем публичный)
     const MANIFEST_URL = "https://raw.githubusercontent.com/ton-connect/demo-dapp/main/manifest.json";
@@ -580,7 +581,7 @@
         if (!tonConnectUI) { alert("TON Connect не инициализирован"); return; }
         const wallet = tonConnectUI.account;
         if (!wallet) {
-            alert("Сначала подключите кошелёк через кнопку сверху");
+           
             await tonConnectUI.connectWallet();
             if (!tonConnectUI.account) { alert("Не удалось подключить кошелёк"); return; }
         }
@@ -607,7 +608,7 @@
         if (!tonConnectUI) { alert("TON Connect не инициализирован"); return; }
         const wallet = tonConnectUI.account;
         if (!wallet) {
-            alert("Сначала подключите кошелёк через кнопку сверху");
+            
             await tonConnectUI.connectWallet();
             if (!tonConnectUI.account) { alert("Не удалось подключить кошелёк"); return; }
         }
@@ -731,18 +732,111 @@
         loadAllData();
         initCurrentUser();
         renderCases();
+        updateBalanceUI();  
+        // Админ-панель
+    function renderAdminItemsPanel() {
+        const container = document.getElementById('adminItemsList');
+        container.innerHTML = '<h4>Редкие подарки</h4>';
+        RARE_GIFTS.forEach((item, idx) => {
+            const imgHtml = item.image ? `<img src="${item.image}" style="max-width:40px; max-height:40px;">` : 'нет фото';
+            container.innerHTML += `
+                <div class="admin-item-row">
+                    <div style="min-width:120px;">${item.icon} ${item.name} (${item.valueTon} TON)</div>
+                    <div class="image-preview">${imgHtml}</div>
+                    <input type="file" accept="image/*" data-type="rare" data-idx="${idx}" class="adminImageInput">
+                    <button class="clearImageBtn" data-type="rare" data-idx="${idx}">🗑️ очистить</button>
+                </div>
+            `;
+        });
+        container.innerHTML += '<h4 style="margin-top:16px;">NFT подарки</h4>';
+        NFT_GIFTS.forEach((item, idx) => {
+            const imgHtml = item.image ? `<img src="${item.image}" style="max-width:40px; max-height:40px;">` : 'нет фото';
+            container.innerHTML += `
+                <div class="admin-item-row">
+                    <div style="min-width:120px;">${item.icon} ${item.name} (${item.valueTon} TON)</div>
+                    <div class="image-preview">${imgHtml}</div>
+                    <input type="file" accept="image/*" data-type="nft" data-idx="${idx}" class="adminImageInput">
+                    <button class="clearImageBtn" data-type="nft" data-idx="${idx}">🗑️ очистить</button>
+                </div>
+            `;
+        });
+        document.querySelectorAll('.adminImageInput').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const base64 = ev.target.result;
+                    const type = input.getAttribute('data-type');
+                    const idx = parseInt(input.getAttribute('data-idx'));
+                    if (type === 'rare') {
+                        RARE_GIFTS[idx].image = base64;
+                    } else {
+                        NFT_GIFTS[idx].image = base64;
+                    }
+                    saveItemsConfig();
+                    renderAdminItemsPanel();
+                    alert('Фото сохранено!');
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+        document.querySelectorAll('.clearImageBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.getAttribute('data-type');
+                const idx = parseInt(btn.getAttribute('data-idx'));
+                if (type === 'rare') {
+                    RARE_GIFTS[idx].image = null;
+                } else {
+                    NFT_GIFTS[idx].image = null;
+                }
+                saveItemsConfig();
+                renderAdminItemsPanel();
+                alert('Фото удалено');
+            });
+        });
+    }
+
+    function init() {
+        initGiftsArrays();
+        loadAllData();
+        initCurrentUser();
+        renderCases();
         updateBalanceUI();
-        
-        document.getElementById('plusBalanceBtn').onclick = showDepositModal;
-        document.getElementById('closeDepositModalBtn').onclick = () => document.getElementById('depositModal').classList.remove('active');
+
+        document.getElementById('plusBalanceBtn').onclick = () => document.getElementById('depositInfoModal').classList.add('active');
+        document.getElementById('closeDepositInfoBtn').onclick = () => document.getElementById('depositInfoModal').classList.remove('active');
         document.getElementById('goToBankBtn').onclick = () => window.open('https://t.me/riskgift_bank', '_blank');
-        document.getElementById('inventoryMainBtn').onclick = () => { renderInventoryModal(); document.getElementById('inventoryModal').classList.add('active'); };
-        document.getElementById('closeInventoryModalBtn').onclick = () => document.getElementById('inventoryModal').classList.remove('active');
+        
+        const inventoryModal = document.getElementById('inventoryModal');
+        document.getElementById('inventoryMainBtn').onclick = () => {
+            renderInventoryModal();
+            inventoryModal.classList.add('active');
+        };
+        document.getElementById('closeInventoryModalBtn').onclick = () => inventoryModal.classList.remove('active');
         document.getElementById('closeSlotBtn').onclick = () => document.getElementById('slotModal').classList.remove('active');
+        
+        const adminCodeModal = document.getElementById('adminCodeModal');
+        const adminPanelModal = document.getElementById('adminPanelModal');
+        document.getElementById('adminAccessBtn').onclick = () => adminCodeModal.classList.add('active');
+        document.getElementById('closeAdminCodeModalBtn').onclick = () => adminCodeModal.classList.remove('active');
+        document.getElementById('submitAdminCodeBtn').onclick = () => {
+            const code = document.getElementById('adminCodeInput').value;
+            if (code === ADMIN_CODE) {
+                adminCodeModal.classList.remove('active');
+                renderAdminItemsPanel();
+                adminPanelModal.classList.add('active');
+            } else {
+                alert('Неверный код');
+            }
+            document.getElementById('adminCodeInput').value = '';
+        };
+        document.getElementById('closeAdminPanelBtn').onclick = () => adminPanelModal.classList.remove('active');
     }
     init();
 </script>
-
+        
+     
 
 </div>
 </body>
